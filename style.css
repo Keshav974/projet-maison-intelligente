@@ -1,0 +1,37 @@
+html {
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f4f4f4;
+    color: #333333;
+}
+
+h1 {
+    color: navy;
+    text-align: center;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.6; 
+}
+
+.highlight {
+    display: inline-block;
+    background-color: yellow;
+    padding: 10px;
+    border: 2px solid red;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-left: 10px; /
+}
+
+.grass { 
+    font-weight: bold;
+}
