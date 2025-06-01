@@ -39,23 +39,3 @@
                 </div>
             </div>
         </nav>
-        <main>
-            <div class="row">
-                <section class="col-md-6">
-                    <h2>À propos</h2>
-                    <p class="highlight grass">Cette plateforme vous permettra de gérer les différents aspects de votre
-                        maison connectée.</p>
-                </section>
-                <section class="col-md-6">
-                    <h2>Accès Rapide</h2>
-                    <p><a href="inscription.html" class="btn btn-primary">Inscrivez-vous</a> pour commencer !</p>
-                </section>
-            </div>
-        </main>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
-        crossorigin="anonymous"></script>
-</body>
-
-</html>
