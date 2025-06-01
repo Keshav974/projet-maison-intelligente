@@ -8,7 +8,7 @@
                 </section>
                 <section class="col-md-6">
                     <h2>Accès Rapide</h2>
-                    <p><a href="formulaire.html" class="btn btn-primary" id="lien-inscription">Inscrivez-vous</a> pour
+                    <p><a href="inscription.php" class="btn btn-primary" id="lien-inscription">Inscrivez-vous</a> pour
                         commencer !</p>
                 </section>
                 <section class="col-12">
