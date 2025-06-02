@@ -36,30 +36,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     if (empty($errors)) {
-        // Traitement des données (pour l'instant, simulation)
-        // Étape 1 : Hasher le mot de passe (TRÈS IMPORTANT pour la sécurité avant de stocker en BDD)
-        // $mot_de_passe_hashe = password_hash($mot_de_passe, PASSWORD_DEFAULT);
-        // Nous verrons password_hash() plus en détail avec la base de données.
+        $host = 'localhost'; 
+        $port = '5432';      
+        $dbname = 'postgres'; 
+        $user = 'postgres'; 
+        $password = 'Keshav.974';
+        $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;user=$user;password=$password";
+        try {
+            $pdo = new PDO($dsn);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // Étape 2 : Enregistrer l'utilisateur en base de données (pas encore implémenté)
-        // ... code pour insérer $pseudo, $email, $mot_de_passe_hashe dans la BDD ...
 
-        // Étape 3 : Afficher un message de succès / Rediriger
-        // Pour l'instant, nous allons juste préparer un message de succès.
+            $stmt = $pdo->prepare("INSERT INTO utilisateurs (pseudo, email, mot_de_passe_hash) VALUES (:pseudo, :email, :mot_de_passe)");
+            $stmt->bindParam(':pseudo', $pseudo);
+            $stmt->bindParam(':email', $email);
+
+            $hashed_password = password_hash($mot_de_passe, PASSWORD_DEFAULT);
+            $stmt->bindParam(':mot_de_passe', $hashed_password);
+
+
+            $stmt->execute();
+
+        } catch (PDOException $e) {
+            $errors[] = "Erreur lors de l'inscription : " . htmlspecialchars($e->getMessage());
+        }
         $success_message = "Inscription réussie (simulation) !<br>" .
                            "Pseudonyme : " . htmlspecialchars($pseudo) . "<br>" .
                            "Email : " . htmlspecialchars($email) . "<br>" .
                            "Bienvenue ! La prochaine étape sera de sauvegarder ces informations.";
 
-        // Réinitialiser les variables des champs pour vider le formulaire après un succès
         $pseudo = "";
         $email = "";
-        // Les champs de mot de passe ne sont jamais re-remplis de toute façon.
 
     }
-    // Si le tableau $errors n'est pas vide, les erreurs seront affichées
-    // dans la partie HTML de la page grâce au code que vous allez écrire
-    // (celui qui parcourt le tableau $errors).
+
 }
 ?>
 
