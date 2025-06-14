@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Vérifier si l'utilisateur est connecté, sinon le rediriger
+// Vérification de la connexion de l'utilisateur
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
@@ -9,13 +9,13 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once 'config_db.php';
 
-
 $errors = [];
 $success_message = '';
 
+// Traitement des formulaires soumis
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    // --- LOGIQUE POUR LA MISE À JOUR DU PROFIL (PSEUDO/EMAIL) ---
+    // Bloc de mise à jour du profil (pseudo/email)
     if (isset($_POST['update_profile_submit'])) {
         $new_pseudo = trim($_POST['pseudo'] ?? '');
         $new_email = trim($_POST['email'] ?? '');
@@ -27,12 +27,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (empty($errors)) {
             try {
+                // Vérification de l'unicité du pseudo et de l'email
                 $sql_check = "SELECT id FROM utilisateurs WHERE (pseudo = :pseudo OR email = :email) AND id != :id";
                 $stmt_check = $db->prepare($sql_check);
                 $stmt_check->execute([':pseudo' => $new_pseudo, ':email' => $new_email, ':id' => $user_id]);
                 if ($stmt_check->fetch()) {
                     $errors[] = "Ce pseudonyme ou cet email est déjà utilisé par un autre compte.";
                 } else {
+                    // Mise à jour du pseudo et de l'email
                     $sql_update = "UPDATE utilisateurs SET pseudo = :pseudo, email = :email WHERE id = :id";
                     $stmt_update = $db->prepare($sql_update);
                     $stmt_update->execute([':pseudo' => $new_pseudo, ':email' => $new_email, ':id' => $user_id]);
@@ -43,15 +45,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-
-    // --- LOGIQUE POUR LE CHANGEMENT DE MOT DE PASSE ---
+    // Bloc de changement de mot de passe
     if (isset($_POST['change_password_submit'])) {
         $current_password = $_POST['current_password'] ?? '';
         $new_password = $_POST['new_password'] ?? '';
         $confirm_new_password = $_POST['confirm_new_password'] ?? '';
         $user_id = $_SESSION['user_id'];
 
-        // Validation
         if (empty($current_password) || empty($new_password) || empty($confirm_new_password)) {
             $errors[] = "Tous les champs de mot de passe sont requis.";
         }
@@ -64,24 +64,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (empty($errors)) {
             try {
-                // 1. Récupérer le hash actuel de l'utilisateur
+                // Vérification du mot de passe actuel
                 $sql_fetch_pass = "SELECT mot_de_passe_hash FROM utilisateurs WHERE id = :id";
                 $stmt_fetch_pass = $db->prepare($sql_fetch_pass);
                 $stmt_fetch_pass->execute([':id' => $user_id]);
                 $user_data = $stmt_fetch_pass->fetch();
 
-                // 2. Vérifier si le mot de passe actuel est correct
                 if ($user_data && password_verify($current_password, $user_data['mot_de_passe_hash'])) {
-                    // 3. Le mot de passe actuel est correct, on peut hacher et mettre à jour le nouveau
+                    // Mise à jour du mot de passe
                     $new_password_hash = password_hash($new_password, PASSWORD_DEFAULT);
-                    
                     $sql_update_pass = "UPDATE utilisateurs SET mot_de_passe_hash = :new_hash WHERE id = :id";
                     $stmt_update_pass = $db->prepare($sql_update_pass);
                     $stmt_update_pass->execute([':new_hash' => $new_password_hash, ':id' => $user_id]);
-
                     $success_message = "Votre mot de passe a été changé avec succès !";
                 } else {
-                    // Le mot de passe actuel fourni est incorrect
                     $errors[] = "Votre mot de passe actuel est incorrect.";
                 }
             } catch (PDOException $e) {
@@ -91,10 +87,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Récupération des données à jour de l'utilisateur pour l'affichage
-
+// Récupération des données de l'utilisateur pour l'affichage
 $utilisateur_actuel = null;
-$error_message_display = ''; 
+$error_message_display = '';
 
 try {
     $sql_fetch = "SELECT id, pseudo, email, role, points, niveau, to_char(date_inscription, 'DD/MM/YYYY à HH24:MI') AS date_inscription_formatee
@@ -120,7 +115,7 @@ require_once 'header.php';
     <hr>
 
     <?php
-    // Affichage des messages de succès ou d'erreur du formulaire de mise à jour
+    // Affichage des messages de succès ou d'erreur
     if (!empty($success_message)) {
         echo '<div class="alert alert-success">' . htmlspecialchars($success_message) . '</div>';
     }
@@ -132,12 +127,13 @@ require_once 'header.php';
         echo '</ul></div>';
     }
 
-    // On s'assure que les données de l'utilisateur ont bien été récupérées avant de tenter de les afficher
+    // Affichage des informations de l'utilisateur
     if (isset($utilisateur_actuel) && $utilisateur_actuel) {
     ?>
         <div class="row">
             <div class="col-lg-8">
 
+                <!-- Bloc d'affichage des informations actuelles -->
                 <div class="card mb-4">
                     <div class="card-header">Informations actuelles</div>
                     <div class="card-body">
@@ -152,7 +148,9 @@ require_once 'header.php';
                     </div>
                 </div>
 
-                <div class="card mb-4"> <div class="card-header">Modifier mes informations</div>
+                <!-- Bloc de mise à jour des informations -->
+                <div class="card mb-4">
+                    <div class="card-header">Modifier mes informations</div>
                     <div class="card-body">
                         <form action="profil.php" method="post">
                             <div class="mb-3">
@@ -168,6 +166,7 @@ require_once 'header.php';
                     </div>
                 </div>
 
+                <!-- Bloc de changement de mot de passe -->
                 <div class="card">
                     <div class="card-header">Changer le mot de passe</div>
                     <div class="card-body">
@@ -191,6 +190,7 @@ require_once 'header.php';
 
             </div>
             <div class="col-lg-4">
+                <!-- Bloc d'affichage du statut et de la progression -->
                 <div class="card">
                     <div class="card-header">Statut et Progression</div>
                     <div class="card-body">
@@ -209,10 +209,10 @@ require_once 'header.php';
                     </div>
                 </div>
             </div>
-            </div>
+        </div>
     <?php
     } else {
-        // Ce message s'affiche si la récupération des données a échoué
+        // Message d'erreur si les données de l'utilisateur n'ont pas été récupérées
         echo '<div class="alert alert-danger">' . htmlspecialchars($error_message_display) . '</div>';
     }
     ?>

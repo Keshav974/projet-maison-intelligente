@@ -1,44 +1,32 @@
 <?php
-// Page du panneau d'administration pour lister tous les utilisateurs.
 session_start();
 
-// On vérifie que l'utilisateur est bien connecté.
+// Vérification de la connexion de l'utilisateur.
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
 
-// Sécurité : on vérifie que seul un administrateur peut accéder à cette page.
+// Vérification que l'utilisateur est un administrateur.
 if ($_SESSION['role'] !== 'admin') {
-    // Si l'utilisateur n'est pas admin, on arrête l'exécution avec un message d'erreur.
     die("Accès non autorisé. Cette page est réservée aux administrateurs.");
 }
 
 // Connexion à la base de données.
 require_once 'config_db.php';
 
-// Initialisation du tableau qui contiendra les utilisateurs.
+// Récupération des utilisateurs depuis la base de données.
 $utilisateurs = [];
-
 try {
-    // Préparation de la requête SQL pour récupérer tous les utilisateurs, triés par leur ID.
-    $sql = "SELECT id, pseudo, email, role, points, niveau 
-            FROM utilisateurs 
-            ORDER BY id ASC";
-    
+    $sql = "SELECT id, pseudo, email, role, points, niveau FROM utilisateurs ORDER BY id ASC";
     $stmt = $db->prepare($sql);
     $stmt->execute();
-    
-    // On récupère tous les résultats dans notre tableau $utilisateurs.
     $utilisateurs = $stmt->fetchAll();
-
 } catch (PDOException $e) {
-    // En cas d'erreur avec la base de données, on prépare un message.
-    // Pour le débogage, on pourrait enregistrer l'erreur technique : error_log($e->getMessage());
     $error_message = "Une erreur est survenue lors de la récupération des utilisateurs.";
 }
 
-// On inclut l'en-tête commun de la page (début du HTML, navbar, etc.).
+// Inclusion de l'en-tête de la page.
 require_once 'header.php';
 ?>
 
@@ -48,15 +36,17 @@ require_once 'header.php';
     <hr>
 
     <?php
-    // S'il y a eu une erreur de BDD, on l'affiche ici.
+    // Affichage d'un message d'erreur en cas de problème avec la base de données.
     if (isset($error_message)) {
         echo '<div class="alert alert-danger">' . htmlspecialchars($error_message) . '</div>';
     }
     ?>
 
-    <?php // On vérifie s'il y a des utilisateurs à afficher avant de construire le tableau.
+    <?php 
+    // Affichage du tableau des utilisateurs si des données sont disponibles.
     if (!empty($utilisateurs)) : ?>
-        <div class="table-responsive"> <table class="table table-striped table-hover">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
                 <thead class="table-dark">
                     <tr>
                         <th>ID</th>
@@ -86,10 +76,9 @@ require_once 'header.php';
     <?php else : ?>
         <p>Aucun utilisateur trouvé dans la base de données.</p>
     <?php endif; ?>
-
 </main>
 
 <?php
-
+// Inclusion du pied de page.
 require_once 'footer.php';
 ?>

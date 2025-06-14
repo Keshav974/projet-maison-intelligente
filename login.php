@@ -1,7 +1,8 @@
 <?php
 
-session_start();
+session_start(); // Démarrage de la session pour gérer les données utilisateur
 
+// Configuration de la connexion à la base de données
 $host = 'localhost';
 $port = '5432';
 $dbname = 'postgres'; 
@@ -15,15 +16,15 @@ $options = [
     PDO::ATTR_EMULATE_PREPARES   => false,
 ];
 
-$errors = [];
-$identifiant = "";
+$errors = []; // Tableau pour stocker les erreurs
+$identifiant = ""; // Variable pour stocker l'identifiant soumis par l'utilisateur
 
-// Vérifier si le formulaire a été soumis
+// Vérification si le formulaire a été soumis
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $identifiant = isset($_POST['identifiant']) ? trim($_POST['identifiant']) : '';
-    $mot_de_passe_login = isset($_POST['mot_de_passe_login']) ? $_POST['mot_de_passe_login'] : '';
+    $identifiant = isset($_POST['identifiant']) ? trim($_POST['identifiant']) : ''; // Récupération de l'identifiant
+    $mot_de_passe_login = isset($_POST['mot_de_passe_login']) ? $_POST['mot_de_passe_login'] : ''; // Récupération du mot de passe
 
-    // Validations de base
+    // Validation des champs du formulaire
     if (empty($identifiant)) {
         $errors[] = "Le pseudonyme ou l'email est requis.";
     }
@@ -31,64 +32,58 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Le mot de passe est requis.";
     }
 
-    // Si pas d'erreurs de validation initiales, tenter la connexion
+    // Si aucune erreur, tentative de connexion à la base de données
     if (empty($errors)) {
         try {
-            $db = new PDO($dsn, $user_db, $password_db, $options);
+            $db = new PDO($dsn, $user_db, $password_db, $options); // Connexion à la base de données
 
-            // Préparer la requête pour trouver l'utilisateur par pseudo OU email
+            // Requête pour récupérer l'utilisateur par pseudonyme ou email
             $sql = "SELECT id, pseudo, email, mot_de_passe_hash, role 
                     FROM utilisateurs 
                     WHERE pseudo = :identifiant OR email = :identifiant";
             
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam(':identifiant', $identifiant);
-            $stmt->execute();
+            $stmt = $db->prepare($sql); // Préparation de la requête
+            $stmt->bindParam(':identifiant', $identifiant); // Liaison des paramètres
+            $stmt->execute(); // Exécution de la requête
             
-            $utilisateur = $stmt->fetch(PDO::FETCH_ASSOC);
+            $utilisateur = $stmt->fetch(PDO::FETCH_ASSOC); // Récupération des résultats
 
+            // Vérification du mot de passe et mise à jour des points si connexion réussie
             if ($utilisateur && password_verify($mot_de_passe_login, $utilisateur['mot_de_passe_hash'])) {
+                $sql_update_points = "UPDATE utilisateurs SET points = points + 1 WHERE id = :user_id"; // Requête pour ajouter des points
+                $stmt_update_points = $db->prepare($sql_update_points); // Préparation de la requête
+                $stmt_update_points->bindParam(':user_id', $utilisateur['id'], PDO::PARAM_INT); // Liaison des paramètres
+                require_once 'functions.php'; // Inclusion des fonctions supplémentaires
+                $stmt_update_points->execute(); // Exécution de la mise à jour
+                updateUserLevel($utilisateur['id'], $db); // Mise à jour du niveau utilisateur
 
-                // On prépare la requête pour ajouter 1 point à l'utilisateur qui se connecte.
-                $sql_update_points = "UPDATE utilisateurs SET points = points + 1 WHERE id = :user_id";
-                $stmt_update_points = $db->prepare($sql_update_points);
-
-                // On lie l'ID de l'utilisateur trouvé
-                $stmt_update_points->bindParam(':user_id', $utilisateur['id'], PDO::PARAM_INT);
-
-                // On exécute la mise à jour
-                require_once 'functions.php';
-                $stmt_update_points->execute();
-                updateUserLevel($utilisateur['id'], $db);
-
-                // On enregistre les infos de l'utilisateur en session.
+                // Enregistrement des informations utilisateur en session
                 $_SESSION['user_id'] = $utilisateur['id'];
                 $_SESSION['pseudo'] = $utilisateur['pseudo'];
                 $_SESSION['role'] = $utilisateur['role'];
 
-                // Rediriger vers le tableau de bord
+                // Redirection vers le tableau de bord
                 header("Location: tableau_de_bord.php");
                 exit;
             } else {
-                // Utilisateur non trouvé ou mot de passe incorrect
-                $errors[] = "Identifiant ou mot de passe incorrect.";
+                $errors[] = "Identifiant ou mot de passe incorrect."; // Erreur si identifiant ou mot de passe incorrect
             }
 
         } catch (PDOException $e) {
-            error_log("Erreur de base de données lors de la connexion : " . $e->getMessage());
-            $errors[] = "Une erreur technique est survenue. Veuillez réessayer plus tard.";
+            error_log("Erreur de base de données lors de la connexion : " . $e->getMessage()); // Log des erreurs de base de données
+            $errors[] = "Une erreur technique est survenue. Veuillez réessayer plus tard."; // Message d'erreur technique
         }
     }
 }
 ?>
 
-<?php require_once 'header.php'; ?>
+<?php require_once 'header.php'; // Inclusion de l'en-tête ?>
 
 <main class="container mt-4">
     <h2>Connexion</h2>
 
     <?php
-    // Afficher les erreurs de validation ou de connexion
+    // Affichage des erreurs de validation ou de connexion
     if (!empty($errors)) {
         echo '<div class="alert alert-danger"><strong>Erreur(s) :</strong><ul>';
         foreach ($errors as $error) {
@@ -98,6 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     ?>
 
+    <!-- Formulaire de connexion -->
     <form action="login.php" method="post" class="needs-validation" novalidate>
         <div class="mb-3">
             <label for="identifiant" class="form-label">Pseudonyme ou Email :</label>
@@ -118,4 +114,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <p class="mt-3">Pas encore de compte ? <a href="inscription.php">Inscrivez-vous ici !</a></p>
 </main>
 
-<?php require_once 'footer.php'; ?>
+<?php require_once 'footer.php'; // Inclusion du pied de page ?>

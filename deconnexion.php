@@ -1,10 +1,11 @@
 <?php
-session_start();
+session_start(); // Démarre une session PHP
 
-// Détruire toutes les variables de session
+// Réinitialise toutes les variables de session
 $_SESSION = array();
 
-if (ini_get("session.use_cookies")) {
+if (ini_get("session.use_cookies")) { 
+    // Supprime le cookie de session si les cookies sont utilisés
     $params = session_get_cookie_params();
     setcookie(session_name(), '', time() - 42000,
         $params["path"], $params["domain"],
@@ -12,8 +13,8 @@ if (ini_get("session.use_cookies")) {
     );
 }
 
-session_destroy();
+session_destroy(); // Détruit la session active
 
-header("Location: login.php");
-exit;
+header("Location: login.php"); // Redirige l'utilisateur vers la page de connexion
+exit; // Termine l'exécution du script
 ?>

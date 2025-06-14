@@ -3,20 +3,18 @@ session_start();
 
 require_once 'config_db.php';
 
+// Récupération des paramètres de recherche et de filtre depuis l'URL
 $recherche = $_GET['recherche'] ?? '';
 $type_filtre = $_GET['type'] ?? '';
 $marque_filtre = $_GET['marque'] ?? '';
 
-// On détermine si une recherche est active (si au moins un filtre est utilisé).
+// Détermine si une recherche ou un filtre est actif
 $is_search_active = !empty($recherche) || !empty($type_filtre) || !empty($marque_filtre);
 
-// On construit la requête SQL de base.
+// Construction de la requête SQL pour récupérer les objets selon les filtres/recherche
 $sql = "SELECT nom, description, type, marque FROM catalogue_objets";
-
 $conditions = [];
 $params = [];
-
-// Si une recherche est active, on construit la clause WHERE.
 
 if ($is_search_active) {
     if (!empty($recherche)) {
@@ -31,17 +29,15 @@ if ($is_search_active) {
         $conditions[] = "marque = :marque";
         $params[':marque'] = $marque_filtre;
     }
-
     if (!empty($conditions)) {
         $sql .= " WHERE " . implode(" AND ", $conditions);
     }
     $sql .= " ORDER BY nom ASC";
 } else {
-    // SINON (pas de recherche), on affiche les 5 premiers objets du catalogue.
     $sql .= " ORDER BY id ASC LIMIT 5";
 }
 
-// Exécution de la requête
+// Exécution de la requête SQL et récupération des résultats
 try {
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
@@ -53,6 +49,7 @@ try {
 require_once 'header.php';
 ?>
 
+<!-- Section d'accroche principale avec titre, description et boutons d'action -->
 <div class="container-fluid px-0">
     <div class="text-center py-5">
         <div class="container">
@@ -66,6 +63,7 @@ require_once 'header.php';
 
 <main class="container mt-5">
 
+    <!-- Présentation des fonctionnalités principales de la plateforme -->
     <section id="free-tour" class="text-center">
         <h2 class="mb-5">Une plateforme, des possibilités infinies</h2>
         <div class="row">
@@ -87,8 +85,9 @@ require_once 'header.php';
         </div>
     </section>
     
-<hr class="my-5">
+    <hr class="my-5">
 
+    <!-- Bloc de recherche et de filtrage des objets connectés -->
     <section id="recherche-information">
         <div class="text-center">
             <h2 class="mb-3">Découvrez les appareils compatibles</h2>
@@ -96,6 +95,7 @@ require_once 'header.php';
         </div>
 
         <div class="row">
+            <!-- Colonne des filtres de recherche -->
             <div class="col-lg-3">
                 <h4>Filtres</h4>
                 <div class="card">
@@ -106,7 +106,7 @@ require_once 'header.php';
                                 <input type="text" class="form-control" id="recherche" name="recherche" placeholder="ex: Ampoule..." value="<?php echo htmlspecialchars($recherche); ?>">
                             </div>
                             <?php
-                            // Récupération dynamique des types et marques distincts depuis la base de données
+                            // Récupération dynamique des types et marques distincts pour les filtres
                             try {
                                 $types_stmt = $db->query("SELECT DISTINCT type FROM catalogue_objets ORDER BY type ASC");
                                 $types = $types_stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -148,6 +148,7 @@ require_once 'header.php';
                 </div>
             </div>
 
+            <!-- Colonne d'affichage des résultats de recherche ou d'aperçu du catalogue -->
             <div class="col-lg-9">
                 <?php if ($is_search_active) : ?>
                     <h4>Résultats de votre recherche</h4>
@@ -171,7 +172,7 @@ require_once 'header.php';
                                         </div>
                                         <p class="card-text text-muted small"><?php echo htmlspecialchars($objet['description']); ?></p>
                                     </div>
-                                    </div>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     <?php else : ?>

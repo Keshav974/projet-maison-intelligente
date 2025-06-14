@@ -1,15 +1,14 @@
 <?php
-session_start(); // On démarre la session pour que le header sache si un utilisateur est connecté
-require_once 'config_db.php';
+session_start(); // Démarre la session pour gérer l'état de connexion de l'utilisateur
+require_once 'config_db.php'; // Inclut la configuration de la base de données
 
 // --- Logique de recherche et de filtrage ---
-$recherche = $_GET['recherche'] ?? '';
-$type_filtre = $_GET['type'] ?? '';
-$marque_filtre = $_GET['marque'] ?? '';
+$recherche = $_GET['recherche'] ?? ''; // Récupère le mot-clé de recherche
+$type_filtre = $_GET['type'] ?? ''; // Récupère le filtre de type
+$marque_filtre = $_GET['marque'] ?? ''; // Récupère le filtre de marque
 
-// On construit la requête SQL de base sur la table du catalogue
+// Construction de la requête SQL pour récupérer les objets du catalogue
 $sql = "SELECT nom, description, type, marque FROM catalogue_objets";
-
 $conditions = [];
 $params = [];
 
@@ -32,15 +31,16 @@ if (!empty($conditions)) {
 $sql .= " ORDER BY nom ASC";
 
 try {
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    $catalogue_results = $stmt->fetchAll();
+    $stmt = $db->prepare($sql); // Prépare la requête SQL
+    $stmt->execute($params); // Exécute la requête avec les paramètres
+    $catalogue_results = $stmt->fetchAll(); // Récupère les résultats
 } catch (PDOException $e) {
     $catalogue_results = [];
-    $error_message = "Une erreur est survenue lors du chargement du catalogue.";
+    $error_message = "Une erreur est survenue lors du chargement du catalogue."; // Message d'erreur en cas de problème
 }
 
-require_once 'header.php';
+require_once 'header.php'; // Inclut le fichier de l'en-tête
+
 ?>
 
 <main class="container mt-4">
@@ -50,6 +50,7 @@ require_once 'header.php';
     </p>
     <hr>
 
+    <!-- Formulaire de recherche et de filtrage -->
     <div class="card bg-light mb-4">
         <div class="card-body">
             <form action="catalogue.php" method="get">
@@ -66,7 +67,7 @@ require_once 'header.php';
                         >
                     </div>
                     <?php
-                    // Récupérer dynamiquement les types distincts
+                    // Récupération des options de type et de marque depuis la base de données
                     $type_options = [];
                     try {
                         $type_stmt = $db->query("SELECT DISTINCT type FROM catalogue_objets ORDER BY type ASC");
@@ -75,7 +76,6 @@ require_once 'header.php';
                         $type_options = [];
                     }
 
-                    // Récupérer dynamiquement les marques distinctes
                     $marque_options = [];
                     try {
                         $marque_stmt = $db->query("SELECT DISTINCT marque FROM catalogue_objets ORDER BY marque ASC");
@@ -120,6 +120,7 @@ require_once 'header.php';
         </div>
     </div>
 
+    <!-- Affichage des résultats du catalogue -->
     <div class="row">
         <?php if (isset($error_message)) : ?>
             <div class="alert alert-danger col-12">
@@ -160,4 +161,4 @@ require_once 'header.php';
     </div>
 </main>
 
-<?php require_once 'footer.php'; ?>
+<?php require_once 'footer.php'; // Inclut le fichier du pied de page ?>
