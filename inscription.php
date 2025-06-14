@@ -25,8 +25,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Le mot de passe est requis.";
     }
 
-    elseif (strlen($mot_de_passe) < 8) {
-        $errors[] = "Le mot de passe doit contenir au moins 8 caractères.";
+    elseif (strlen($mot_de_passe) < 5) {
+        $errors[] = "Le mot de passe doit contenir au moins 5 caractères.";
     }
 
     if (empty($confirmation_mot_de_passe)) {
