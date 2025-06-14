@@ -7,21 +7,17 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Inclure la config BDD
 require_once 'config_db.php';
 
-// --- Début de la logique de recherche et de filtrage ---
 
 // Récupérer les valeurs des filtres depuis l'URL (méthode GET)
-// L'opérateur '??' est un raccourci pour isset(). Ex: $_GET['type'] ?? '' équivaut à isset($_GET['type']) ? $_GET['type'] : ''
 $type_filtre = $_GET['type'] ?? '';
 $etat_filtre = $_GET['etat'] ?? '';
 $recherche_filtre = $_GET['recherche'] ?? '';
 
-// Construire la requête SQL de base
+// Requête SQL de base
 $sql = "SELECT id, nom, description, type, etat, marque FROM objets_connectes";
 
-// Préparer les conditions WHERE et les paramètres pour la requête préparée
 $conditions = [];
 $params = [];
 
@@ -37,21 +33,16 @@ if (!empty($etat_filtre)) {
 
 if (!empty($recherche_filtre)) {
     $conditions[] = "(nom ILIKE :recherche OR description ILIKE :recherche)";
-    // ILIKE est spécifique à PostgreSQL pour une recherche insensible à la casse. Pour MySQL, ce serait LIKE.
     $params[':recherche'] = '%' . $recherche_filtre . '%';
 }
 
-// Si des conditions ont été ajoutées, les joindre à la requête SQL
 if (!empty($conditions)) {
     $sql .= " WHERE " . implode(" AND ", $conditions);
 }
 
-// Ajouter le tri
 $sql .= " ORDER BY nom ASC";
 
-// --- Fin de la logique de recherche et de filtrage ---
-
-// Initialiser le tableau des objets et le message d'erreur
+// Initialisation le tableau des objets et le message d'erreur
 $objets = [];
 $error_message = '';
 
@@ -63,11 +54,10 @@ try {
     $objets = $stmt->fetchAll();
 
 } catch (PDOException $e) {
-    // error_log("Erreur lors de la récupération des objets : " . $e->getMessage());
     $error_message = "Une erreur est survenue lors de la récupération des objets.";
 }
 
-// Inclure l'en-tête de la page
+
 require_once 'header.php';
 ?>
 

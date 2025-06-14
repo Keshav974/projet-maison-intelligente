@@ -1,46 +1,42 @@
 <?php
+// Page du module "Gestion" permettant d'ajouter un nouvel objet connecté.
 session_start();
 
-// Étape 1 : Vérifier si l'utilisateur est connecté
+// On vérifie d'abord que l'utilisateur est connecté.
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
 
-// Étape 2 : Vérifier le rôle de l'utilisateur
-// Seuls les utilisateurs avec le rôle 'complexe' ou 'admin' peuvent ajouter un objet.
+// Ensuite, on protège la page par rôle : seuls les 'complexe' et 'admin' ont le droit.
 if ($_SESSION['role'] !== 'complexe' && $_SESSION['role'] !== 'admin') {
-    // Rediriger ou afficher un message d'erreur si l'utilisateur n'a pas les droits
-    // die() arrête l'exécution du script et affiche un message. C'est simple et direct.
     die("Accès non autorisé. Vous n'avez pas les permissions nécessaires pour accéder à cette page.");
 }
 
-// Inclure la configuration de la base de données
+// Connexion à la BDD.
 require_once 'config_db.php';
 
-// Initialisation des variables
-$errors = [];
-$nom = $description = $type = $marque = $etat = ""; // Initialisation pour le formulaire "collant"
 
-// Vérifier si le formulaire a été soumis
+$errors = [];
+$nom = $description = $type = $marque = $etat = ""; 
+
+// On ne traite le formulaire que s'il a été soumis en méthode POST.
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Récupérer et nettoyer les données
+    // Récupération des données du formulaire avec une protection contre les clés non définies.
     $nom = trim($_POST['nom'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $type = trim($_POST['type'] ?? '');
     $marque = trim($_POST['marque'] ?? '');
-    $etat = trim($_POST['etat'] ?? 'Inactif'); // Valeur par défaut si non soumis
+    $etat = trim($_POST['etat'] ?? 'Inactif');
 
-    // Validation
+    // --- Validations de base des champs ---
     if (empty($nom)) {
         $errors[] = "Le nom de l'objet est requis.";
     }
     if (empty($type)) {
         $errors[] = "Le type de l'objet est requis.";
     }
-    // Vous pourriez ajouter d'autres validations ici...
 
-    // S'il n'y a pas d'erreurs, insérer dans la base de données
     if (empty($errors)) {
         try {
             $sql = "INSERT INTO objets_connectes (nom, description, type, marque, etat) 
@@ -53,22 +49,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bindParam(':type', $type);
             $stmt->bindParam(':marque', $marque);
             $stmt->bindParam(':etat', $etat);
-
             $stmt->execute();
-
-            // Rediriger vers la liste des objets après succès pour voir le nouvel ajout
-            // C'est le pattern Post-Redirect-Get (PRG) qui évite les doubles soumissions
             header("Location: objets.php?status=added");
             exit;
 
         } catch (PDOException $e) {
-            // error_log("Erreur lors de l'ajout de l'objet : " . $e->getMessage());
+
             $errors[] = "Une erreur est survenue lors de l'ajout de l'objet.";
         }
     }
 }
 
-// Inclure l'en-tête
 require_once 'header.php';
 ?>
 
@@ -78,7 +69,6 @@ require_once 'header.php';
     <hr>
 
     <?php
-    // Afficher les erreurs s'il y en a
     if (!empty($errors)) {
         echo '<div class="alert alert-danger"><ul>';
         foreach ($errors as $error) {
@@ -120,6 +110,6 @@ require_once 'header.php';
 </main>
 
 <?php
-// Inclure le pied de page
+
 require_once 'footer.php';
 ?>

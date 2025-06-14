@@ -1,17 +1,13 @@
 <?php
-// Toujours démarrer la session au TOUT début du script
-// pour pouvoir accéder aux variables de session.
 session_start();
 
 // Vérifier si l'utilisateur est connecté.
-// Si la variable de session 'user_id' n'existe pas (ce qui signifie que l'utilisateur
-// n'est pas passé par login.php avec succès), on le redirige vers la page de connexion.
+// Si la variable de session 'user_id' n'existe pas, on le redirige vers la page de connexion.
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
-    exit; // Il est crucial d'arrêter l'exécution du script après une redirection.
+    exit;
 }
 
-// Inclure l'en-tête de la page (qui contient la structure HTML de début, la navbar, etc.)
 require_once 'header.php';
 ?>
 
@@ -78,6 +74,6 @@ require_once 'header.php';
 </main>
 
 <?php
-// Inclure le pied de page
+
 require_once 'footer.php';
 ?>

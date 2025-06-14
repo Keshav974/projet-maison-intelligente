@@ -4,9 +4,9 @@ session_start();
 
 $host = 'localhost';
 $port = '5432';
-$dbname = 'postgres'; // Assurez-vous que c'est le bon nom
-$user_db = 'postgres';           // Votre utilisateur PostgreSQL
-$password_db = 'Keshav.974'; // Votre mot de passe PostgreSQL
+$dbname = 'postgres'; 
+$user_db = 'postgres';
+$password_db = 'Keshav.974';
 
 $dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
 $options = [
@@ -15,9 +15,8 @@ $options = [
     PDO::ATTR_EMULATE_PREPARES   => false,
 ];
 
-// Initialisation des variables
 $errors = [];
-$identifiant = ""; // Pour le formulaire "collant" (sticky)
+$identifiant = "";
 
 // Vérifier si le formulaire a été soumis
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -77,7 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
-<?php require_once 'header.php'; // Inclut votre en-tête HTML et la navbar ?>
+<?php require_once 'header.php'; ?>
 
 <main class="container mt-4">
     <h2>Connexion</h2>
@@ -113,4 +112,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <p class="mt-3">Pas encore de compte ? <a href="inscription.php">Inscrivez-vous ici !</a></p>
 </main>
 
-<?php require_once 'footer.php'; // Inclut votre pied de page HTML et les scripts JS ?>
+<?php require_once 'footer.php';?>

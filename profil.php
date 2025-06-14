@@ -7,10 +7,9 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Inclure la configuration de la base de données
 require_once 'config_db.php';
 
-// Initialisation des variables pour les messages
+
 $errors = [];
 $success_message = '';
 
@@ -59,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($new_password !== $confirm_new_password) {
             $errors[] = "Le nouveau mot de passe et sa confirmation ne correspondent pas.";
         }
-        if (strlen($new_password) < 5) { // Utilisation de la longueur que vous aviez définie
+        if (strlen($new_password) < 5) {
             $errors[] = "Le nouveau mot de passe doit contenir au moins 5 caractères.";
         }
 
@@ -86,15 +85,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $errors[] = "Votre mot de passe actuel est incorrect.";
                 }
             } catch (PDOException $e) {
-                // error_log("Erreur lors du changement de mot de passe : " . $e->getMessage());
                 $errors[] = "Une erreur technique est survenue lors du changement de mot de passe.";
             }
         }
     }
 }
 
-// --- Récupération des données à jour de l'utilisateur pour l'affichage ---
-// On fait cette requête à chaque chargement de page pour toujours afficher les infos les plus récentes
+// Récupération des données à jour de l'utilisateur pour l'affichage
+
 $utilisateur_actuel = null;
 $error_message_display = ''; 
 
