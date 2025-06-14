@@ -105,22 +105,39 @@ require_once 'header.php';
                                 <label for="recherche" class="form-label">Mot-clé</label>
                                 <input type="text" class="form-control" id="recherche" name="recherche" placeholder="ex: Ampoule..." value="<?php echo htmlspecialchars($recherche); ?>">
                             </div>
+                            <?php
+                            // Récupération dynamique des types et marques distincts depuis la base de données
+                            try {
+                                $types_stmt = $db->query("SELECT DISTINCT type FROM catalogue_objets ORDER BY type ASC");
+                                $types = $types_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                                $marques_stmt = $db->query("SELECT DISTINCT marque FROM catalogue_objets ORDER BY marque ASC");
+                                $marques = $marques_stmt->fetchAll(PDO::FETCH_COLUMN);
+                            } catch (PDOException $e) {
+                                $types = [];
+                                $marques = [];
+                            }
+                            ?>
                             <div class="mb-3">
                                 <label for="type" class="form-label">Catégorie</label>
                                 <select class="form-select" id="type" name="type">
                                     <option value="">Toutes</option>
-                                    <option value="Éclairage" <?php if ($type_filtre === 'Éclairage') echo 'selected'; ?>>Éclairage</option>
-                                    <option value="Sécurité" <?php if ($type_filtre === 'Sécurité') echo 'selected'; ?>>Sécurité</option>
-                                    <option value="Thermostat" <?php if ($type_filtre === 'Thermostat') echo 'selected'; ?>>Thermostat</option>
+                                    <?php foreach ($types as $type): ?>
+                                        <option value="<?php echo htmlspecialchars($type); ?>" <?php if ($type_filtre === $type) echo 'selected'; ?>>
+                                            <?php echo htmlspecialchars($type); ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="mb-3">
                                 <label for="marque" class="form-label">Marque</label>
                                 <select class="form-select" id="marque" name="marque">
                                     <option value="">Toutes</option>
-                                    <option value="Philips Hue" <?php if ($marque_filtre === 'Philips Hue') echo 'selected'; ?>>Philips Hue</option>
-                                    <option value="Google Nest" <?php if ($marque_filtre === 'Google Nest') echo 'selected'; ?>>Google Nest</option>
-                                    <option value="Ring" <?php if ($marque_filtre === 'Ring') echo 'selected'; ?>>Ring</option>
+                                    <?php foreach ($marques as $marque): ?>
+                                        <option value="<?php echo htmlspecialchars($marque); ?>" <?php if ($marque_filtre === $marque) echo 'selected'; ?>>
+                                            <?php echo htmlspecialchars($marque); ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="d-grid">
@@ -135,7 +152,9 @@ require_once 'header.php';
                 <?php if ($is_search_active) : ?>
                     <h4>Résultats de votre recherche</h4>
                 <?php else : ?>
-                    <h4>Aperçu du catalogue</h4>
+                    <h4>
+                        <a href="catalogue.php" class="text-decoration-none">Aperçu du catalogue</a>
+                    </h4>
                 <?php endif; ?>
                 <hr>
                 

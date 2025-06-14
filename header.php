@@ -25,6 +25,8 @@
         <li class="nav-item">
           <a class="nav-link" href="index.php">Accueil</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="catalogue.php">Catalogue</a>
         <?php if (isset($_SESSION['user_id'])) : // Liens visibles uniquement si l'utilisateur est connecté ?>
             <li class="nav-item">
                 <a class="nav-link" href="tableau_de_bord.php">Tableau de Bord</a>

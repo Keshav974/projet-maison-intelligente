@@ -134,28 +134,76 @@ require_once 'header.php';
     }
     ?>
 
+    <?php
+    // Récupérer dynamiquement les options pour les filtres depuis la base de données
+    // Types
+    $types = [];
+    try {
+        $stmt_types = $db->query("SELECT DISTINCT type FROM objets_connectes ORDER BY type ASC");
+        $types = $stmt_types->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {
+        $types = [];
+    }
+
+    // États
+    $etats = [];
+    try {
+        $stmt_etats = $db->query("SELECT DISTINCT etat FROM objets_connectes ORDER BY etat ASC");
+        $etats = $stmt_etats->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {
+        $etats = [];
+    }
+
+    // Marques
+    $marques = [];
+    try {
+        $stmt_marques = $db->query("SELECT DISTINCT marque FROM objets_connectes ORDER BY marque ASC");
+        $marques = $stmt_marques->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {
+        $marques = [];
+    }
+
+    // Récupérer la valeur du filtre marque
+    $marque_filtre = $_GET['marque'] ?? '';
+    ?>
     <div class="card bg-light mb-4">
         <div class="card-body">
             <form action="objets.php" method="get" class="row g-3 align-items-center">
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <label for="recherche" class="visually-hidden">Rechercher</label>
                     <input type="text" class="form-control" id="recherche" name="recherche" placeholder="Rechercher par nom ou description..." value="<?php echo htmlspecialchars($recherche_filtre); ?>">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="type" class="visually-hidden">Type</label>
                     <select class="form-select" id="type" name="type">
                         <option value="">-- Tous les types --</option>
-                        <option value="Thermostat" <?php if ($type_filtre === 'Thermostat') echo 'selected'; ?>>Thermostat</option>
-                        <option value="Éclairage" <?php if ($type_filtre === 'Éclairage') echo 'selected'; ?>>Éclairage</option>
-                        <option value="Sécurité" <?php if ($type_filtre === 'Sécurité') echo 'selected'; ?>>Sécurité</option>
+                        <?php foreach ($types as $type_option): ?>
+                            <option value="<?php echo htmlspecialchars($type_option); ?>" <?php if ($type_filtre === $type_option) echo 'selected'; ?>>
+                                <?php echo htmlspecialchars($type_option); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <label for="etat" class="visually-hidden">État</label>
                     <select class="form-select" id="etat" name="etat">
                         <option value="">-- Tous les états --</option>
-                        <option value="Actif" <?php if ($etat_filtre === 'Actif') echo 'selected'; ?>>Actif</option>
-                        <option value="Inactif" <?php if ($etat_filtre === 'Inactif') echo 'selected'; ?>>Inactif</option>
+                        <?php foreach ($etats as $etat_option): ?>
+                            <option value="<?php echo htmlspecialchars($etat_option); ?>" <?php if ($etat_filtre === $etat_option) echo 'selected'; ?>>
+                                <?php echo htmlspecialchars($etat_option); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="marque" class="visually-hidden">Marque</label>
+                    <select class="form-select" id="marque" name="marque">
+                        <option value="">-- Toutes les marques --</option>
+                        <?php foreach ($marques as $marque_option): ?>
+                            <option value="<?php echo htmlspecialchars($marque_option); ?>" <?php if ($marque_filtre === $marque_option) echo 'selected'; ?>>
+                                <?php echo htmlspecialchars($marque_option); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="col-md-2">
