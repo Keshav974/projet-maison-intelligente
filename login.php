@@ -47,24 +47,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             $utilisateur = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($utilisateur) {
-                // Utilisateur trouvé, vérifier le mot de passe
-                if (password_verify($mot_de_passe_login, $utilisateur['mot_de_passe_hash'])) {
-                    // Mot de passe correct, connexion réussie !
-                    $_SESSION['user_id'] = $utilisateur['id'];
-                    $_SESSION['pseudo'] = $utilisateur['pseudo'];
-                    $_SESSION['role'] = $utilisateur['role'];
-                    // Vous pouvez stocker d'autres infos si nécessaire
+            if ($utilisateur && password_verify($mot_de_passe_login, $utilisateur['mot_de_passe_hash'])) {
 
-                    // Rediriger vers le tableau de bord
-                    header("Location: tableau_de_bord.php");
-                    exit; // Important d'arrêter le script après une redirection
-                } else {
-                    // Mot de passe incorrect
-                    $errors[] = "Identifiant ou mot de passe incorrect.";
-                }
+                // On prépare la requête pour ajouter 1 point à l'utilisateur qui se connecte.
+                $sql_update_points = "UPDATE utilisateurs SET points = points + 1 WHERE id = :user_id";
+                $stmt_update_points = $db->prepare($sql_update_points);
+
+                // On lie l'ID de l'utilisateur trouvé
+                $stmt_update_points->bindParam(':user_id', $utilisateur['id'], PDO::PARAM_INT);
+
+                // On exécute la mise à jour
+                require_once 'functions.php';
+                $stmt_update_points->execute();
+                updateUserLevel($utilisateur['id'], $db);
+
+                // On enregistre les infos de l'utilisateur en session.
+                $_SESSION['user_id'] = $utilisateur['id'];
+                $_SESSION['pseudo'] = $utilisateur['pseudo'];
+                $_SESSION['role'] = $utilisateur['role'];
+
+                // Rediriger vers le tableau de bord
+                header("Location: tableau_de_bord.php");
+                exit;
             } else {
-                // Utilisateur non trouvé
+                // Utilisateur non trouvé ou mot de passe incorrect
                 $errors[] = "Identifiant ou mot de passe incorrect.";
             }
 
@@ -112,4 +118,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <p class="mt-3">Pas encore de compte ? <a href="inscription.php">Inscrivez-vous ici !</a></p>
 </main>
 
-<?php require_once 'footer.php';?>
+<?php require_once 'footer.php'; ?>
