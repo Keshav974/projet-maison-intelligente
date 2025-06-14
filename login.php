@@ -1,20 +1,7 @@
 <?php
 
 session_start(); // Démarrage de la session pour gérer les données utilisateur
-
-// Configuration de la connexion à la base de données
-$host = 'localhost';
-$port = '5432';
-$dbname = 'postgres'; 
-$user_db = 'postgres';
-$password_db = 'Keshav.974';
-
-$dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
-$options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
-];
+require_once 'config_db.php'; // Inclusion du fichier de configuration de la base de données
 
 $errors = []; // Tableau pour stocker les erreurs
 $identifiant = ""; // Variable pour stocker l'identifiant soumis par l'utilisateur
@@ -35,8 +22,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Si aucune erreur, tentative de connexion à la base de données
     if (empty($errors)) {
         try {
-            $db = new PDO($dsn, $user_db, $password_db, $options); // Connexion à la base de données
-
             // Requête pour récupérer l'utilisateur par pseudonyme ou email
             $sql = "SELECT id, pseudo, email, mot_de_passe_hash, role 
                     FROM utilisateurs 

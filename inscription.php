@@ -1,5 +1,5 @@
 <?php
-
+require_once 'config_db.php'; // Inclusion du fichier de configuration de la base de données
 // Initialisation des variables pour gérer les erreurs, les champs du formulaire et les messages de succès
 $errors = [];
 $pseudo = "";
@@ -39,21 +39,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Si aucune erreur, traitement de l'inscription
     if (empty($errors)) {
-        // Configuration de la connexion à la base de données PostgreSQL
-        $host = 'localhost'; 
-        $port = '5432';      
-        $dbname = 'postgres'; 
-        $user = 'postgres'; 
-        $password = 'Keshav.974';
-        $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;user=$user;password=$password";
-
         try {
-            // Connexion à la base de données
-            $pdo = new PDO($dsn);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
             // Préparation et exécution de la requête d'insertion
-            $stmt = $pdo->prepare("INSERT INTO utilisateurs (pseudo, email, mot_de_passe_hash) VALUES (:pseudo, :email, :mot_de_passe)");
+            $stmt = $db->prepare("INSERT INTO utilisateurs (pseudo, email, mot_de_passe_hash) VALUES (:pseudo, :email, :mot_de_passe)");
             $stmt->bindParam(':pseudo', $pseudo);
             $stmt->bindParam(':email', $email);
 
