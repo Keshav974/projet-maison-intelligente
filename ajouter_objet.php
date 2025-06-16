@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once 'config_db.php';
-require_once 'functions.php';
+require_once 'includes/config_db.php';
+require_once 'includes/functions.php';
 
 // Vérification des permissions de l'utilisateur
 if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; }
@@ -34,8 +34,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['catalogue_id_final']))
             $objet_catalogue = $stmt->fetch();
 
             if ($objet_catalogue) {
-                $sql_insert = "INSERT INTO objets_connectes (nom, description, type, marque, catalogue_id, etat) 
-                               VALUES (:nom, :description, :type, :marque, :catalogue_id, :etat)";
+                $sql_insert = "INSERT INTO objets_connectes (nom, description, type, marque, catalogue_id, etat, utilisateur_id) 
+                               VALUES (:nom, :description, :type, :marque, :catalogue_id, :etat, :utilisateur_id)";
                 $stmt_insert = $db->prepare($sql_insert);
                 $stmt_insert->execute([
                     ':nom' => $nom_personnalise,
@@ -43,15 +43,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['catalogue_id_final']))
                     ':type' => $objet_catalogue['type'],
                     ':marque' => $objet_catalogue['marque'],
                     ':etat' => 'inactif',
-                    ':catalogue_id' => $catalogue_id 
+                    ':catalogue_id' => $catalogue_id ,
+                    ':utilisateur_id' => $_SESSION['user_id']
                 ]);
 
-                $points_ajoutes = 5;
+                $points_ajoutes = 10;
                 $stmt_update_points = $db->prepare("UPDATE utilisateurs SET points = points + :points WHERE id = :user_id");
                 $stmt_update_points->execute([':points' => $points_ajoutes, ':user_id' => $_SESSION['user_id']]);
                 
                 updateUserLevel($_SESSION['user_id'], $db);
-                
+                logActivity($_SESSION['user_id'], 'ajout_objet', "Ajout de l'objet : " . htmlspecialchars($nom_personnalise), $db);
+
                 $_SESSION['success_message'] = "L'objet '" . htmlspecialchars($nom_personnalise) . "' a été ajouté avec succès ! Vous avez gagné $points_ajoutes points.";
                 header("Location: objets.php?status=added");
                 exit;
@@ -107,7 +109,7 @@ try {
     $marque_options = $db->query("SELECT DISTINCT marque FROM catalogue_objets WHERE marque IS NOT NULL AND marque != '' ORDER BY marque ASC")->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) { $errors[] = "Erreur de chargement des filtres."; }
 
-require_once 'header.php';
+require_once 'includes/header.php';
 ?>
 
 <main class="container mt-4">

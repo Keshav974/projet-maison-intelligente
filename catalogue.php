@@ -1,6 +1,6 @@
 <?php
 session_start(); // Démarre la session pour gérer l'état de connexion de l'utilisateur
-require_once 'config_db.php'; // Inclut la configuration de la base de données
+require_once 'includes/config_db.php'; // Inclut la configuration de la base de données
 
 // --- Logique de recherche et de filtrage ---
 $recherche = $_GET['recherche'] ?? ''; // Récupère le mot-clé de recherche
@@ -39,7 +39,7 @@ try {
     $error_message = "Une erreur est survenue lors du chargement du catalogue."; // Message d'erreur en cas de problème
 }
 
-require_once 'header.php'; // Inclut le fichier de l'en-tête
+require_once 'includes/header.php'; // Inclut le fichier de l'en-tête
 
 ?>
 

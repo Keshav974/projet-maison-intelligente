@@ -1,5 +1,5 @@
 <?php
-
+define('BASE_URL', '/');
 // Configuration des paramètres de connexion à la base de données
 $host = 'localhost';
 $port = '5432';

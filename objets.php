@@ -7,8 +7,37 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-require_once 'config_db.php';
+require_once 'includes/config_db.php';
+// --- DÉBUT DU TRAITEMENT DES SUPPRESSIONS (POST) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+    // CAS 1 : L'admin supprime définitivement un objet
+    if (isset($_POST['id_objet_a_supprimer']) && isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+        try {
+            $stmt_delete = $db->prepare("DELETE FROM objets_connectes WHERE id = :id");
+            $stmt_delete->execute([':id' => $_POST['id_objet_a_supprimer']]);
+            header("Location: objets.php?status=deleted");
+            exit;
+        } catch (PDOException $e) {
+            header("Location: objets.php?status=error_delete");
+            exit;
+        }
+    }
 
+    // CAS 2 : Un utilisateur complexe demande la suppression
+    if (isset($_POST['id_objet_demande_suppression']) && isset($_SESSION['role']) && $_SESSION['role'] === 'complexe') {
+        try {
+            $stmt_request = $db->prepare("UPDATE objets_connectes SET demande_suppression = TRUE WHERE id = :id");
+            $stmt_request->execute([':id' => $_POST['id_objet_demande_suppression']]);
+            header("Location: objets.php?status=request_sent");
+            exit;
+        } catch (PDOException $e) {
+            header("Location: objets.php?status=error_request");
+            exit;
+        }
+    }
+}
+// --- FIN DU TRAITEMENT DES SUPPRESSIONS ---
 // Attribution de points à l'utilisateur lors de la première consultation de la page
 if (!isset($_SESSION['consultation_points_awarded'])) {
     try {
@@ -18,7 +47,7 @@ if (!isset($_SESSION['consultation_points_awarded'])) {
         $stmt_update_points->bindParam(':points', $points_a_ajouter, PDO::PARAM_INT);
         $stmt_update_points->bindParam(':user_id', $_SESSION['user_id'], PDO::PARAM_INT);
         $stmt_update_points->execute();
-        require_once 'functions.php';
+        require_once 'includes/functions.php';
         updateUserLevel($utilisateur['id'], $db);
         $_SESSION['consultation_points_awarded'] = true;
     } catch (PDOException $e) {
@@ -48,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_objet_a_supprimer'
 $type_filtre = $_GET['type'] ?? '';
 $etat_filtre = $_GET['etat'] ?? '';
 $recherche_filtre = $_GET['recherche'] ?? '';
-$sql = "SELECT id, nom, description, type, etat, marque FROM objets_connectes";
+$sql = "SELECT id, nom, description, type, etat, marque, demande_suppression FROM objets_connectes";
 $conditions = [];
 $params = [];
 
@@ -102,7 +131,7 @@ try {
     $error_message = "Une erreur est survenue lors de la récupération des données.";
 }
 
-require_once 'header.php';
+require_once 'includes/header.php';
 ?>
 
 <main class="container mt-4">
@@ -243,14 +272,31 @@ require_once 'header.php';
                                 <?php endif; ?>
                             </span>
                             <div> 
+                                
                                 <!-- Bouton de modification pour les utilisateurs autorisés -->
                                 <?php if (isset($_SESSION['role']) && ($_SESSION['role'] === 'complexe' || $_SESSION['role'] === 'admin')) : ?>
                                     <a href="modifier_objet.php?id=<?php echo $objet['id']; ?>" class="btn btn-primary btn-sm" title="Modifier">
                                         <i class="bi bi-pencil-fill"></i> Modifier
                                     </a>
                                 <?php endif; ?>
+                                
+                                <!-- Bouton de demande de suppression pour les utilisateurs complexes -->
+                                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'complexe') : ?>
+                                    <form action="objets.php" method="post" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir demander la suppression de cet objet ?');">
+                                        <input type="hidden" name="id_objet_demande_suppression" value="<?php echo $objet['id']; ?>">
+                                        <button type="submit" class="btn btn-warning btn-sm" title="Demander la suppression">
+                                            <i class="bi bi-exclamation-triangle"></i> Demander suppression
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                
                                 <!-- Bouton de suppression pour les administrateurs -->
                                 <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') : ?>
+                                    <?php if ($objet['demande_suppression']) : ?>
+                                        <span class="badge bg-warning me-2" title="Demande de suppression en attente">
+                                            <i class="bi bi-exclamation-circle"></i> Suppression demandée
+                                        </span>
+                                    <?php endif; ?>
                                     <form action="objets.php" method="post" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet objet ?');">
                                         <input type="hidden" name="id_objet_a_supprimer" value="<?php echo $objet['id']; ?>">
                                         <button type="submit" class="btn btn-danger btn-sm" title="Supprimer">

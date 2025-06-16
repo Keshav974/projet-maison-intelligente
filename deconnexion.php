@@ -12,7 +12,9 @@ if (ini_get("session.use_cookies")) {
         $params["secure"], $params["httponly"]
     );
 }
-
+if (isset($_SESSION['user_id'])) {
+    logActivity($_SESSION['user_id'], 'deconnexion', 'Déconnexion de la plateforme', $db);
+}
 session_destroy(); // Détruit la session active
 
 header("Location: login.php"); // Redirige l'utilisateur vers la page de connexion

@@ -1,5 +1,5 @@
 <?php
-require_once 'config_db.php'; // Inclusion du fichier de configuration de la base de données
+require_once 'includes/config_db.php'; // Inclusion du fichier de configuration de la base de données
 // Initialisation des variables pour gérer les erreurs, les champs du formulaire et les messages de succès
 $errors = [];
 $pseudo = "";
@@ -13,6 +13,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = isset($_POST['email']) ? trim($_POST['email']) : '';
     $mot_de_passe = isset($_POST['mot_de_passe']) ? $_POST['mot_de_passe'] : '';
     $confirmation_mot_de_passe = isset($_POST['confirmation_mot_de_passe']) ? $_POST['confirmation_mot_de_passe'] : '';
+
+        try {
+        $stmt_check_auth = $db->prepare("SELECT statut FROM membres_autorises WHERE email = :email");
+        $stmt_check_auth->execute([':email' => $email]);
+        $membre_autorise = $stmt_check_auth->fetch();
+
+        if (!$membre_autorise) {
+            $errors[] = "Votre adresse email n'est pas autorisée à s'inscrire sur cette plateforme. Veuillez contacter un administrateur.";
+        } elseif ($membre_autorise['statut'] === 'inscrit') {
+            $errors[] = "Cette adresse email a déjà été utilisée pour une inscription.";
+        }
+    } catch (PDOException $e) {
+        $errors[] = "Erreur lors de la vérification de l'autorisation.";
+    }
 
     // Validation des champs du formulaire
     if (empty($pseudo)) {
@@ -39,17 +53,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Si aucune erreur, traitement de l'inscription
     if (empty($errors)) {
-        try {
-            // Préparation et exécution de la requête d'insertion
-            $stmt = $db->prepare("INSERT INTO utilisateurs (pseudo, email, mot_de_passe_hash) VALUES (:pseudo, :email, :mot_de_passe)");
-            $stmt->bindParam(':pseudo', $pseudo);
-            $stmt->bindParam(':email', $email);
+            try {
+                // On démarre une transaction pour s'assurer que les deux mises à jour se font correctement
+                $db->beginTransaction();
 
-            // Hashage du mot de passe avant de l'insérer dans la base de données
-            $hashed_password = password_hash($mot_de_passe, PASSWORD_DEFAULT);
-            $stmt->bindParam(':mot_de_passe', $hashed_password);
+                // 1. On insère le nouvel utilisateur dans la table 'utilisateurs'
+                $hashed_password = password_hash($mot_de_passe, PASSWORD_DEFAULT);
+                $stmt_insert = $db->prepare("INSERT INTO utilisateurs (pseudo, email, mot_de_passe_hash) VALUES (:pseudo, :email, :mot_de_passe_hash)");
+                $stmt_insert->execute([
+                    ':pseudo' => $pseudo,
+                    ':email' => $email,
+                    ':mot_de_passe_hash' => $hashed_password
+                ]);
 
-            $stmt->execute();
+                // 2. On met à jour le statut dans la table 'membres_autorises'
+                $stmt_update_status = $db->prepare("UPDATE membres_autorises SET statut = 'inscrit' WHERE email = :email");
+                $stmt_update_status->execute([':email' => $email]);
+
+                // On valide la transaction
+                $db->commit();
+
+                // Redirection vers la page de connexion avec un message de succès
+                session_start(); // On démarre la session ici pour le message flash
+                $_SESSION['success_message'] = "Inscription réussie ! Vous pouvez maintenant vous connecter.";
+                header("Location: login.php");
+                exit;
 
         } catch (PDOException $e) {
             // Gestion des erreurs de connexion ou d'exécution de la requête
@@ -69,7 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
-<?php require_once 'header.php'; ?>
+<?php require_once 'includes/header.php'; ?>
 
 <main>
     <?php

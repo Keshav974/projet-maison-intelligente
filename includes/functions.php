@@ -50,4 +50,19 @@ function updateUserLevel($userId, $db) {
         // Gestion des erreurs silencieuse
     }
 }
+
+function logActivity($userId, $actionType, $description, $db) {
+    try {
+        $sql = "INSERT INTO logs_activite (utilisateur_id, type_action, description_action) VALUES (:user_id, :action_type, :description)";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':action_type' => $actionType,
+            ':description' => $description
+        ]);
+    } catch (PDOException $e) {
+        // En cas d'erreur, on enregistre dans le log du serveur pour ne pas bloquer l'utilisateur.
+        error_log("Erreur de logging d'activité : " . $e->getMessage());
+    }
+}
 ?>

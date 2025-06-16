@@ -1,7 +1,7 @@
 <?php
 
 session_start(); // Démarrage de la session pour gérer les données utilisateur
-require_once 'config_db.php'; // Inclusion du fichier de configuration de la base de données
+require_once 'includes/config_db.php'; // Inclusion du fichier de configuration de la base de données
 
 $errors = []; // Tableau pour stocker les erreurs
 $identifiant = ""; // Variable pour stocker l'identifiant soumis par l'utilisateur
@@ -38,10 +38,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $sql_update_points = "UPDATE utilisateurs SET points = points + 1 WHERE id = :user_id"; // Requête pour ajouter des points
                 $stmt_update_points = $db->prepare($sql_update_points); // Préparation de la requête
                 $stmt_update_points->bindParam(':user_id', $utilisateur['id'], PDO::PARAM_INT); // Liaison des paramètres
-                require_once 'functions.php'; // Inclusion des fonctions supplémentaires
+                require_once 'includes/functions.php'; // Inclusion des fonctions supplémentaires
                 $stmt_update_points->execute(); // Exécution de la mise à jour
                 updateUserLevel($utilisateur['id'], $db); // Mise à jour du niveau utilisateur
-
+                logActivity($utilisateur['id'], 'connexion', 'Connexion réussie', $db);
                 // Enregistrement des informations utilisateur en session
                 $_SESSION['user_id'] = $utilisateur['id'];
                 $_SESSION['pseudo'] = $utilisateur['pseudo'];
@@ -62,7 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
-<?php require_once 'header.php'; // Inclusion de l'en-tête ?>
+<?php require_once 'includes/header.php'; // Inclusion de l'en-tête ?>
 
 <main class="container mt-4">
     <h2>Connexion</h2>

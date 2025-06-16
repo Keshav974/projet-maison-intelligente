@@ -9,7 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
     <!-- Inclusion du fichier CSS personnalisé -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 
 <body>
@@ -44,6 +44,10 @@
                             <!-- Lien vers les objets connectés (visible uniquement si connecté) -->
                             <li class="nav-item">
                                 <a class="nav-link" href="objets.php">Objets Connectés</a>
+                            </li>
+                            <!-- Lien vers les membres (visible uniquement si connecté) -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="membres.php">Membres</a>
                             </li>
                             <?php if (isset($_SESSION['role']) && ($_SESSION['role'] === 'complexe' || $_SESSION['role'] === 'admin')) : ?>
                                 <!-- Lien pour ajouter un objet (visible pour les rôles 'complexe' et 'admin') -->

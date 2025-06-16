@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once 'config_db.php';
-require_once 'functions.php';
+require_once 'includes/config_db.php';
+require_once 'includes/functions.php';
 
 // Vérifie que seul un administrateur peut accéder à cette page
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -41,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-require_once 'header.php';
+require_once 'includes/header.php';
 ?>
 
 <main class="container mt-4">
@@ -87,5 +87,5 @@ require_once 'header.php';
 </main>
 
 <?php
-require_once 'footer.php';
+require_once 'includes/footer.php';
 ?>

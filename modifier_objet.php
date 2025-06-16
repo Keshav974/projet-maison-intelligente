@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once 'config_db.php';
-require_once 'functions.php';
+require_once 'includes/config_db.php';
+require_once 'includes/functions.php';
 
 // --- Vérification de l'accès utilisateur ---
 if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; }
@@ -49,6 +49,11 @@ try {
             }
         }
         $success_message = "Objet mis à jour avec succès !";
+        $points_ajoutes = 5;
+        $stmt_update_points = $db->prepare("UPDATE utilisateurs SET points = points + :points WHERE id = :user_id");
+        $stmt_update_points->execute([':points' => $points_ajoutes, ':user_id' => $_SESSION['user_id']]);
+        logActivity($_SESSION['user_id'], 'ajout_objet', "Ajout de l'objet : " . htmlspecialchars($nom_personnalise), $db);
+        updateUserLevel($_SESSION['user_id'], $db); // Mise à jour du niveau de l'utilisateur
         header("Location: modifier_objet.php?id=" . $objet_id . "&status=updated");
         exit;
     }
@@ -58,7 +63,7 @@ try {
     $errors[] = $e->getMessage();
 }
 
-require_once 'header.php';
+require_once 'includes/header.php';
 ?>
 
 <main class="container mt-4">

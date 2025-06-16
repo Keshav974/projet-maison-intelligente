@@ -1,7 +1,7 @@
 <?php
-session_start();
-
-require_once 'config_db.php';
+session_start(); // Démarre la session pour accéder aux variables de session
+require_once 'includes/config_db.php'; // Inclut la configuration de la base de données
+// require_once 'includes/functions.php'; // Inclus si nécessaire sur cette page
 
 // Récupération des paramètres de recherche et de filtre depuis l'URL
 $recherche = $_GET['recherche'] ?? '';
@@ -46,24 +46,39 @@ try {
     $objets_results = [];
 }
 
-require_once 'header.php';
+require_once 'includes/header.php';
 ?>
 
-<!-- Section d'accroche principale avec titre, description et boutons d'action -->
 <div class="container-fluid px-0">
     <div class="text-center py-5">
         <div class="container">
-            <h1 class="display-4 fw-bold">Votre Maison, Plus Intelligente</h1>
-            <p class="lead my-4">Centralisez, contrôlez et optimisez tous vos objets connectés depuis une seule et même plateforme intuitive.</p>
-            <a href="inscription.php" class="btn btn-primary btn-lg">Créez votre compte gratuitement</a>
-            <a href="#free-tour" class="btn btn-outline-secondary btn-lg">Découvrir les fonctionnalités</a>
+            <?php
+            // **ICI COMMENCE LA LOGIQUE CONDITIONNELLE**
+            if (isset($_SESSION['user_id'])) {
+                // L'utilisateur est connecté
+            ?>
+                <h1 class="display-4 fw-bold">Bienvenue, <?php echo htmlspecialchars($_SESSION['pseudo']); ?> !</h1>
+                <p class="lead my-4">Explorez votre maison intelligente et gérez vos appareils.</p>
+                <a href="tableau_de_bord.php" class="btn btn-primary btn-lg">Accéder à mon Tableau de Bord</a>
+                <a href="objets.php" class="btn btn-outline-secondary btn-lg">Voir mes Objets Connectés</a>
+            <?php
+            } else {
+                // L'utilisateur n'est PAS connecté
+            ?>
+                <h1 class="display-4 fw-bold">Votre Maison, Plus Intelligente</h1>
+                <p class="lead my-4">Centralisez, contrôlez et optimisez tous vos objets connectés depuis une seule et même plateforme intuitive.</p>
+                <a href="inscription.php" class="btn btn-primary btn-lg">Créez votre compte gratuitement</a>
+                <a href="#free-tour" class="btn btn-outline-secondary btn-lg">Découvrir les fonctionnalités</a>
+            <?php
+            }
+            // **FIN DE LA LOGIQUE CONDITIONNELLE**
+            ?>
         </div>
     </div>
 </div>
 
 <main class="container mt-5">
 
-    <!-- Présentation des fonctionnalités principales de la plateforme -->
     <section id="free-tour" class="text-center">
         <h2 class="mb-5">Une plateforme, des possibilités infinies</h2>
         <div class="row">
@@ -84,10 +99,9 @@ require_once 'header.php';
             </div>
         </div>
     </section>
-    
+
     <hr class="my-5">
 
-    <!-- Bloc de recherche et de filtrage des objets connectés -->
     <section id="recherche-information">
         <div class="text-center">
             <h2 class="mb-3">Découvrez les appareils compatibles</h2>
@@ -95,7 +109,6 @@ require_once 'header.php';
         </div>
 
         <div class="row">
-            <!-- Colonne des filtres de recherche -->
             <div class="col-lg-3">
                 <h4>Filtres</h4>
                 <div class="card">
@@ -148,7 +161,6 @@ require_once 'header.php';
                 </div>
             </div>
 
-            <!-- Colonne d'affichage des résultats de recherche ou d'aperçu du catalogue -->
             <div class="col-lg-9">
                 <?php if ($is_search_active) : ?>
                     <h4>Résultats de votre recherche</h4>
@@ -157,8 +169,9 @@ require_once 'header.php';
                         <a href="catalogue.php" class="text-decoration-none">Aperçu du catalogue</a>
                     </h4>
                 <?php endif; ?>
+
                 <hr>
-                
+
                 <div class="row">
                     <?php if (!empty($objets_results)) : ?>
                         <?php foreach ($objets_results as $objet) : ?>
