@@ -48,7 +48,7 @@ if (!isset($_SESSION['consultation_points_awarded'])) {
         $stmt_update_points->bindParam(':user_id', $_SESSION['user_id'], PDO::PARAM_INT);
         $stmt_update_points->execute();
         require_once 'includes/functions.php';
-        updateUserLevel($utilisateur['id'], $db);
+        //updateUserLevel($utilisateur['id'], $db);
         $_SESSION['consultation_points_awarded'] = true;
     } catch (PDOException $e) {
         error_log("Erreur de base de données lors de l'attribution des points : " . $e->getMessage());

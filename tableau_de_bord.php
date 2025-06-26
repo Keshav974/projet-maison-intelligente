@@ -294,6 +294,9 @@ require_once 'includes/header.php';
                     <a href="admin_ajouter_catalogue.php" class="list-group-item list-group-item-action list-group-item-info">
                         <i class="bi bi-journal-plus"></i> Module d'Administration : Ajouter un appareil au Catalogue
                     </a>
+                        <a href="admin_statistiques.php" class="list-group-item list-group-item-action list-group-item-warning">
+        <i class="bi bi-graph-up"></i> Module d'Administration : Voir les Statistiques
+    </a>
             <?php
                 endif;
             endif;

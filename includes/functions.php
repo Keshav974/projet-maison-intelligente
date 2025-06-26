@@ -65,4 +65,16 @@ function logActivity($userId, $actionType, $description, $db) {
         error_log("Erreur de logging d'activité : " . $e->getMessage());
     }
 }
+
+function incrementerCompteurAction($userId, $db) {
+    try {
+        $stmt = $db->prepare("UPDATE utilisateurs SET nombre_actions = nombre_actions + 1 WHERE id = :id");
+        $stmt->execute([':id' => $userId]);
+    } catch (PDOException $e) {
+        // Gérer l'erreur silencieusement pour ne pas bloquer l'utilisateur
+        error_log('Erreur lors de l\'incrémentation du compteur d\'actions: ' . $e->getMessage());
+    }
+}
 ?>
+
+

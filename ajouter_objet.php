@@ -51,8 +51,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['catalogue_id_final']))
                 $stmt_update_points = $db->prepare("UPDATE utilisateurs SET points = points + :points WHERE id = :user_id");
                 $stmt_update_points->execute([':points' => $points_ajoutes, ':user_id' => $_SESSION['user_id']]);
                 
-                updateUserLevel($_SESSION['user_id'], $db);
+                //updateUserLevel($_SESSION['user_id'], $db);
                 logActivity($_SESSION['user_id'], 'ajout_objet', "Ajout de l'objet : " . htmlspecialchars($nom_personnalise), $db);
+                incrementerCompteurAction($_SESSION['user_id'], $db); //
 
                 $_SESSION['success_message'] = "L'objet '" . htmlspecialchars($nom_personnalise) . "' a été ajouté avec succès ! Vous avez gagné $points_ajoutes points.";
                 header("Location: objets.php?status=added");

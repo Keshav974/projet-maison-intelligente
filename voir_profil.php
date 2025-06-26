@@ -30,11 +30,9 @@ try {
 // Récupérer l'historique d'activité pour l'utilisateur affiché
 $logs_activite = [];
 try {
-    // Le $profil_id est déjà défini sur la page voir_profil.php
-    // Sur profil.php, il faudra utiliser $_SESSION['user_id']
     $id_a_chercher = $profil_id ?? $_SESSION['user_id'];
 
-    $stmt_logs = $db->prepare("SELECT type_action, description_action, to_char(date_action, 'DD/MM/YYYY à HH24:MI') AS date_formatee 
+    $stmt_logs = $db->prepare("SELECT type_action, description_action, to_char(date_action, 'DD/MM/YYYY à HH24:MI') AS date_formatee, nombre_connexions, nombre_actions
                                FROM logs_activite 
                                WHERE utilisateur_id = :id 
                                ORDER BY date_action DESC 
@@ -68,6 +66,11 @@ require_once 'includes/header.php';
                     
                     <dt class="col-sm-3">Membre depuis le :</dt>
                     <dd class="col-sm-9"><?php echo htmlspecialchars($profil_utilisateur['date_inscription_formatee']); ?></dd>
+                    <dt class="col-sm-4">Nombre de connexions :</dt>
+<dd class="col-sm-8"><?php echo htmlspecialchars($utilisateur_actuel['nombre_connexions']); ?></dd>
+
+<dt class="col-sm-4">Nombre d'actions :</dt>
+<dd class="col-sm-8"><?php echo htmlspecialchars($utilisateur_actuel['nombre_actions']); ?></dd>
                 </dl>
             </div>
         </div>

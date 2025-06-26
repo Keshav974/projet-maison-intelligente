@@ -1,13 +1,72 @@
 <?php
 session_start();
+require_once 'includes/config_db.php';
 
+$niveaux_config = [
+    'débutant' => [
+        'points_requis' => 0,
+        'role_associe' => 'simple'
+    ],
+    'intermédiaire' => [
+        'points_requis' => 20, 
+        'role_associe' => 'simple'
+    ],
+    'avancé' => [
+        'points_requis' => 50,
+        'role_associe' => 'complexe' // Débloque le module Gestion
+    ],
+    'expert' => [
+        'points_requis' => 100,
+        'role_associe' => 'admin' // Débloque le module Administration
+    ]
+];
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['level_up_submit'])) {
+    $nouveau_niveau_choisi = $_POST['nouveau_niveau'] ?? '';
+    $user_id = $_SESSION['user_id'];
+
+    // On récupère les données actuelles de l'utilisateur pour vérifier
+    $stmt_user = $db->prepare("SELECT points, niveau FROM utilisateurs WHERE id = :id");
+    $stmt_user->execute([':id' => $user_id]);
+    $user_actuel = $stmt_user->fetch();
+
+    // Vérification de sécurité
+    if (
+        $user_actuel && // L'utilisateur existe
+        isset($niveaux_config[$nouveau_niveau_choisi]) && // Le niveau demandé existe dans notre config
+        $user_actuel['points'] >= $niveaux_config[$nouveau_niveau_choisi]['points_requis'] && // L'utilisateur a assez de points
+        $niveaux_config[$nouveau_niveau_choisi]['points_requis'] > $niveaux_config[$user_actuel['niveau']]['points_requis'] // On ne peut que monter, pas descendre
+    ) {
+        // Tout est bon, on met à jour le niveau et le rôle
+        $nouveau_role = $niveaux_config[$nouveau_niveau_choisi]['role_associe'];
+
+        $sql_update = "UPDATE utilisateurs SET niveau = :niveau, role = :role WHERE id = :id";
+        $stmt_update = $db->prepare($sql_update);
+        $stmt_update->execute([
+            ':niveau' => $nouveau_niveau_choisi,
+            ':role' => $nouveau_role,
+            ':id' => $user_id
+        ]);
+
+        // On met à jour la session avec le nouveau rôle
+        $_SESSION['role'] = $nouveau_role;
+
+        // On redirige avec un message de succès
+        header("Location: profil.php?status=levelup_success");
+        exit;
+    } else {
+        // Redirection avec une erreur si la tentative est invalide
+        header("Location: profil.php?status=levelup_error");
+        exit;
+    }
+}
 // Vérification de la connexion de l'utilisateur
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
 
-require_once 'includes/config_db.php';
+
 
 $errors = [];
 $success_message = '';
@@ -92,7 +151,7 @@ $utilisateur_actuel = null;
 $error_message_display = '';
 
 try {
-    $sql_fetch = "SELECT id, pseudo, email, role, points, niveau, to_char(date_inscription, 'DD/MM/YYYY à HH24:MI') AS date_inscription_formatee
+    $sql_fetch = "SELECT id, pseudo, email, role, points, niveau, to_char(date_inscription, 'DD/MM/YYYY à HH24:MI') AS date_inscription_formatee, nombre_connexions, nombre_actions
                   FROM utilisateurs WHERE id = :id";
     $stmt_fetch = $db->prepare($sql_fetch);
     $stmt_fetch->bindParam(':id', $_SESSION['user_id'], PDO::PARAM_INT);
@@ -160,6 +219,11 @@ require_once 'includes/header.php';
                             <dd class="col-sm-8"><?php echo htmlspecialchars($utilisateur_actuel['email']); ?></dd>
                             <dt class="col-sm-4">Membre depuis le :</dt>
                             <dd class="col-sm-8"><?php echo htmlspecialchars($utilisateur_actuel['date_inscription_formatee']); ?></dd>
+                            <dt class="col-sm-4">Nombre de connexions :</dt>
+<dd class="col-sm-8"><?php echo htmlspecialchars($utilisateur_actuel['nombre_connexions']); ?></dd>
+
+<dt class="col-sm-4">Nombre d'actions :</dt>
+<dd class="col-sm-8"><?php echo htmlspecialchars($utilisateur_actuel['nombre_actions']); ?></dd>
                         </dl>
                     </div>
                 </div>
@@ -222,6 +286,42 @@ require_once 'includes/header.php';
                             <strong>Points :</strong>
                             <span class="badge bg-warning text-dark fs-6 rounded-pill"><?php echo htmlspecialchars($utilisateur_actuel['points']); ?></span>
                         </div>
+                    </div> <div class="card mt-4">
+        <div class="card-header">Évolution</div>
+        <div class="card-body">
+            <p>Passez au niveau supérieur pour débloquer de nouvelles fonctionnalités !</p>
+            <ul class="list-group">
+                <?php
+                // On boucle sur notre configuration de niveaux
+                foreach ($niveaux_config as $niveau_nom => $niveau_data) {
+                    // On n'affiche que les niveaux supérieurs à l'actuel
+                    if ($niveau_data['points_requis'] > $niveaux_config[$utilisateur_actuel['niveau']]['points_requis']) {
+                        
+                        echo '<li class="list-group-item d-flex justify-content-between align-items-center">';
+                        
+                        // Si l'utilisateur a assez de points
+                        if ($utilisateur_actuel['points'] >= $niveau_data['points_requis']) {
+                            echo '<span><strong>' . htmlspecialchars(ucfirst($niveau_nom)) . '</strong> <span class="badge bg-success">' . $niveau_data['points_requis'] . ' pts requis</span></span>';
+                            // On affiche un formulaire avec un bouton pour monter de niveau
+                            echo '<form action="profil.php" method="post" class="m-0">';
+                            echo '<input type="hidden" name="nouveau_niveau" value="' . $niveau_nom . '">';
+                            echo '<button type="submit" name="level_up_submit" class="btn btn-primary btn-sm">Choisir</button>';
+                            echo '</form>';
+                        } else {
+                            // Si l'utilisateur n'a pas assez de points
+                            $points_manquants = $niveau_data['points_requis'] - $utilisateur_actuel['points'];
+                            echo '<span>' . htmlspecialchars(ucfirst($niveau_nom)) . ' <span class="badge bg-secondary">' . $niveau_data['points_requis'] . ' pts requis</span></span>';
+                            echo '<span class="badge bg-warning text-dark" title="Il vous manque ' . $points_manquants . ' points">Verrouillé</span>';
+                        }
+                        
+                        echo '</li>';
+                    }
+                }
+                ?>
+            </ul>
+        </div>
+    </div>
+    </div>
                     </div>
                 </div>
             </div>

@@ -41,7 +41,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt_update_points->bindParam(':user_id', $utilisateur['id'], PDO::PARAM_INT); // Liaison des paramètres
                 require_once 'includes/functions.php'; // Inclusion des fonctions supplémentaires
                 $stmt_update_points->execute(); // Exécution de la mise à jour
-                updateUserLevel($utilisateur['id'], $db); // Mise à jour du niveau utilisateur
+                        try {
+            $stmt_update_logins = $db->prepare("UPDATE utilisateurs SET nombre_connexions = nombre_connexions + 1 WHERE id = :id");
+            $stmt_update_logins->execute([':id' => $user['id']]);
+        } catch (PDOException $e) {
+            // On ne bloque pas la connexion si le compteur échoue
+            error_log("Erreur de mise à jour du compteur de connexions: " . $e->getMessage());
+        }
+                //updateUserLevel($utilisateur['id'], $db); // Mise à jour du niveau utilisateur
                 logActivity($utilisateur['id'], 'connexion', 'Connexion réussie', $db);
                 // Enregistrement des informations utilisateur en session
                 $_SESSION['user_id'] = $utilisateur['id'];
