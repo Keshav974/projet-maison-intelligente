@@ -23,7 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($errors)) {
         try {
             // Requête pour récupérer l'utilisateur par pseudonyme ou email
-            $sql = "SELECT id, pseudo, email, mot_de_passe_hash, role 
+            $sql = "SELECT id, pseudo, email, mot_de_passe_hash, role, compte_valide 
                     FROM utilisateurs 
                     WHERE pseudo = :identifiant OR email = :identifiant";
             
@@ -35,6 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Vérification du mot de passe et mise à jour des points si connexion réussie
             if ($utilisateur && password_verify($mot_de_passe_login, $utilisateur['mot_de_passe_hash'])) {
+                if ($user['compte_valide'] || $user['jeton_validation'] === NULL) {
                 $sql_update_points = "UPDATE utilisateurs SET points = points + 1 WHERE id = :user_id"; // Requête pour ajouter des points
                 $stmt_update_points = $db->prepare($sql_update_points); // Préparation de la requête
                 $stmt_update_points->bindParam(':user_id', $utilisateur['id'], PDO::PARAM_INT); // Liaison des paramètres
@@ -50,6 +51,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Redirection vers le tableau de bord
                 header("Location: tableau_de_bord.php");
                 exit;
+                } else {
+                    $errors[] = "Votre compte n'est pas encore validé. Veuillez vérifier votre email pour le lien de validation."; // Erreur si le compte n'est pas validé
+                }
             } else {
                 $errors[] = "Identifiant ou mot de passe incorrect."; // Erreur si identifiant ou mot de passe incorrect
             }
@@ -65,10 +69,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <?php require_once 'includes/header.php'; // Inclusion de l'en-tête ?>
 
 <main class="container mt-4">
+
     <h2>Connexion</h2>
 
     <?php
     // Affichage des erreurs de validation ou de connexion
+
     if (!empty($errors)) {
         echo '<div class="alert alert-danger"><strong>Erreur(s) :</strong><ul>';
         foreach ($errors as $error) {

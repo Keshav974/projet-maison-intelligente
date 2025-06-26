@@ -1,5 +1,6 @@
 <?php
 require_once 'includes/config_db.php'; // Inclusion du fichier de configuration de la base de données
+
 // Initialisation des variables pour gérer les erreurs, les champs du formulaire et les messages de succès
 $errors = [];
 $pseudo = "";
@@ -41,8 +42,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($mot_de_passe)) {
         $errors[] = "Le mot de passe est requis.";
-    } elseif (strlen($mot_de_passe) < 5) {
-        $errors[] = "Le mot de passe doit contenir au moins 5 caractères.";
+    } elseif (strlen($mot_de_passe) < 8) {
+        $errors[] = "Le mot de passe doit contenir au moins 8 caractères.";
     }
 
     if (empty($confirmation_mot_de_passe)) {
@@ -51,33 +52,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Les mots de passe ne correspondent pas.";
     }
 
+    if (empty($errors)) {
+        try {
+            $stmt_check_user = $db->prepare("SELECT id FROM utilisateurs WHERE pseudo = :pseudo OR email = :email");
+            $stmt_check_user->execute([':pseudo' => $pseudo, ':email' => $email]);
+            if ($stmt_check_user->fetch()) {
+                $errors[] = "Ce pseudonyme ou cette adresse email est déjà utilisé(e).";
+            }
+        } catch (PDOException $e) {
+            $errors[] = "Erreur lors de la vérification des utilisateurs existants.";
+        }
+    }
+
     // Si aucune erreur, traitement de l'inscription
     if (empty($errors)) {
             try {
                 // On démarre une transaction pour s'assurer que les deux mises à jour se font correctement
                 $db->beginTransaction();
-
+                $jeton_validation = bin2hex(random_bytes(32));
                 // 1. On insère le nouvel utilisateur dans la table 'utilisateurs'
                 $hashed_password = password_hash($mot_de_passe, PASSWORD_DEFAULT);
-                $stmt_insert = $db->prepare("INSERT INTO utilisateurs (pseudo, email, mot_de_passe_hash) VALUES (:pseudo, :email, :mot_de_passe_hash)");
-                $stmt_insert->execute([
-                    ':pseudo' => $pseudo,
-                    ':email' => $email,
-                    ':mot_de_passe_hash' => $hashed_password
-                ]);
+                $stmt_insert = $db->prepare(
+            "INSERT INTO utilisateurs (pseudo, email, mot_de_passe_hash, jeton_validation, compte_valide) 
+             VALUES (:pseudo, :email, :mot_de_passe_hash, :jeton, FALSE)"
+        );
+        $stmt_insert->execute([
+            ':pseudo' => $pseudo,
+            ':email' => $email,
+            ':mot_de_passe_hash' => $hashed_password,
+            ':jeton' => $jeton_validation // On insère le jeton
+        ]);
 
-                // 2. On met à jour le statut dans la table 'membres_autorises'
                 $stmt_update_status = $db->prepare("UPDATE membres_autorises SET statut = 'inscrit' WHERE email = :email");
                 $stmt_update_status->execute([':email' => $email]);
+                        $subject = "Validez votre inscription pour Ma Maison Intelligente";
+        $validation_link = "http://localhost/maison_intelligente/validation.php?token=" . $jeton_validation;
+        $message_html = "
+        <html><body>
+            <h2>Bonjour " . htmlspecialchars($pseudo) . ",</h2>
+            <p>Merci de vous être inscrit. Pour finaliser, veuillez cliquer sur le lien ci-dessous :</p>
+            <p><a href='" . $validation_link . "'>" . $validation_link . "</a></p>
+        </body></html>";
 
-                // On valide la transaction
                 $db->commit();
-
-                // Redirection vers la page de connexion avec un message de succès
-                session_start(); // On démarre la session ici pour le message flash
-                $_SESSION['success_message'] = "Inscription réussie ! Vous pouvez maintenant vous connecter.";
-                header("Location: login.php");
-                exit;
 
         } catch (PDOException $e) {
             // Gestion des erreurs de connexion ou d'exécution de la requête
@@ -85,10 +102,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         // Message de succès après une inscription réussie
-        $success_message = "Inscription réussie (simulation) !<br>" .
+        $success_message = "Inscription réussie !<br>" .
                            "Pseudonyme : " . htmlspecialchars($pseudo) . "<br>" .
                            "Email : " . htmlspecialchars($email) . "<br>" .
-                           "Bienvenue ! La prochaine étape sera de sauvegarder ces informations.";
+                           "Inscription presque terminée ! Veuillez consulter votre boîte mail pour valider votre compte.<br>" .
+                           "Lien de validation (simulation) : <a href='$validation_link'>$validation_link</a>";
 
         // Réinitialisation des champs du formulaire
         $pseudo = "";

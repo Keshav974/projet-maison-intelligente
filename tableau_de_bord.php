@@ -49,9 +49,6 @@ try {
     $objets_ids = [];      // Juste la liste des IDs
 
     if ($objets_bruts) {
-        // On met à jour le compteur d'objets pour la carte de stat
-        $stats['objets_count'] = count($objets_bruts);
-
         // On remplit nos deux tableaux
         foreach ($objets_bruts as $objet) {
             $objets_ids[] = $objet['id']; // Ajoute l'id à la liste
