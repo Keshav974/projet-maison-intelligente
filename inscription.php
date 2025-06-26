@@ -1,6 +1,5 @@
 <?php
-require_once 'includes/config_db.php'; // Inclusion du fichier de configuration de la base de données
-
+require_once 'includes/config_db.php';
 // Initialisation des variables pour gérer les erreurs, les champs du formulaire et les messages de succès
 $errors = [];
 $pseudo = "";

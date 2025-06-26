@@ -8,10 +8,9 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require_once 'includes/config_db.php';
-// --- DÉBUT DU TRAITEMENT DES SUPPRESSIONS (POST) ---
+
+// Traitement des suppressions et demandes de suppression
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    
-    // CAS 1 : L'admin supprime définitivement un objet
     if (isset($_POST['id_objet_a_supprimer']) && isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
         try {
             $stmt_delete = $db->prepare("DELETE FROM objets_connectes WHERE id = :id");
@@ -24,7 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // CAS 2 : Un utilisateur complexe demande la suppression
     if (isset($_POST['id_objet_demande_suppression']) && isset($_SESSION['role']) && $_SESSION['role'] === 'complexe') {
         try {
             $stmt_request = $db->prepare("UPDATE objets_connectes SET demande_suppression = TRUE WHERE id = :id");
@@ -37,8 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-// --- FIN DU TRAITEMENT DES SUPPRESSIONS ---
-// Attribution de points à l'utilisateur lors de la première consultation de la page
+
+// Attribution de points à l'utilisateur
 if (!isset($_SESSION['consultation_points_awarded'])) {
     try {
         $points_a_ajouter = 1;
@@ -48,32 +46,13 @@ if (!isset($_SESSION['consultation_points_awarded'])) {
         $stmt_update_points->bindParam(':user_id', $_SESSION['user_id'], PDO::PARAM_INT);
         $stmt_update_points->execute();
         require_once 'includes/functions.php';
-        //updateUserLevel($utilisateur['id'], $db);
         $_SESSION['consultation_points_awarded'] = true;
     } catch (PDOException $e) {
         error_log("Erreur de base de données lors de l'attribution des points : " . $e->getMessage());
     }
 }
 
-// Suppression d'un objet connecté par un administrateur
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_objet_a_supprimer'])) {
-    if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
-        try {
-            $id_a_supprimer = $_POST['id_objet_a_supprimer'];
-            $sql_delete = "DELETE FROM objets_connectes WHERE id = :id";
-            $stmt_delete = $db->prepare($sql_delete);
-            $stmt_delete->bindParam(':id', $id_a_supprimer, PDO::PARAM_INT);
-            $stmt_delete->execute();
-            header("Location: objets.php?status=deleted");
-            exit;
-        } catch (PDOException $e) {
-            header("Location: objets.php?status=error");
-            exit;
-        }
-    }
-}
-
-// Construction de la requête SQL pour récupérer les objets connectés selon les filtres
+// Construction de la requête SQL pour récupérer les objets connectés
 $type_filtre = $_GET['type'] ?? '';
 $etat_filtre = $_GET['etat'] ?? '';
 $recherche_filtre = $_GET['recherche'] ?? '';
@@ -135,7 +114,7 @@ require_once 'includes/header.php';
 ?>
 
 <main class="container mt-4">
-    <!-- Affichage du titre et bouton d'ajout d'objet pour les utilisateurs autorisés -->
+    <!-- Affichage du titre et bouton d'ajout d'objet -->
     <div class="d-flex justify-content-between align-items-center">
         <h1>Liste des Objets Connectés</h1>
         <?php if (isset($_SESSION['role']) && ($_SESSION['role'] === 'complexe' || $_SESSION['role'] === 'admin')) : ?>
@@ -146,7 +125,7 @@ require_once 'includes/header.php';
     </div>
     <hr>
 
-    <!-- Affichage des messages de statut (succès, erreur, etc.) -->
+    <!-- Affichage des messages de statut -->
     <?php 
     if (isset($_GET['status']) && $_GET['status'] == 'deleted') {
         echo '<div class="alert alert-success">L\'objet a été supprimé avec succès.</div>';
@@ -160,7 +139,7 @@ require_once 'includes/header.php';
     ?>
 
     <?php
-    // Récupération des options de filtres (types, états, marques) depuis la base de données
+    // Récupération des options de filtres
     $types = [];
     try {
         $stmt_types = $db->query("SELECT DISTINCT type FROM objets_connectes ORDER BY type ASC");
@@ -237,7 +216,6 @@ require_once 'includes/header.php';
                         <div class="card-body flex-grow-1">
                             <h5 class="card-title"><?php echo htmlspecialchars($objet['nom']); ?></h5>
                             <h6 class="card-subtitle mb-2 text-muted"><?php echo htmlspecialchars($objet['type']); ?></h6>
-                            <!-- Affichage des paramètres de l'objet si actif -->
                             <?php if ($objet['etat'] === 'Actif' && isset($parametres_par_objet[$objet['id']])) : ?>
                                 <div class="mt-3 mb-3 p-2 bg-light rounded small">
                                     <ul>
@@ -272,15 +250,11 @@ require_once 'includes/header.php';
                                 <?php endif; ?>
                             </span>
                             <div> 
-                                
-                                <!-- Bouton de modification pour les utilisateurs autorisés -->
                                 <?php if (isset($_SESSION['role']) && ($_SESSION['role'] === 'complexe' || $_SESSION['role'] === 'admin')) : ?>
                                     <a href="modifier_objet.php?id=<?php echo $objet['id']; ?>" class="btn btn-primary btn-sm" title="Modifier">
                                         <i class="bi bi-pencil-fill"></i> Modifier
                                     </a>
                                 <?php endif; ?>
-                                
-                                <!-- Bouton de demande de suppression pour les utilisateurs complexes -->
                                 <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'complexe') : ?>
                                     <form action="objets.php" method="post" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir demander la suppression de cet objet ?');">
                                         <input type="hidden" name="id_objet_demande_suppression" value="<?php echo $objet['id']; ?>">
@@ -289,8 +263,6 @@ require_once 'includes/header.php';
                                         </button>
                                     </form>
                                 <?php endif; ?>
-                                
-                                <!-- Bouton de suppression pour les administrateurs -->
                                 <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') : ?>
                                     <?php if ($objet['demande_suppression']) : ?>
                                         <span class="badge bg-warning me-2" title="Demande de suppression en attente">
@@ -310,7 +282,6 @@ require_once 'includes/header.php';
                 </div>
             <?php endforeach; ?>
         <?php else : ?>
-            <!-- Message si aucun objet trouvé -->
             <div class="col">
                 <div class="alert alert-warning">Aucun objet correspondant à vos critères de recherche n'a été trouvé.</div>
             </div>

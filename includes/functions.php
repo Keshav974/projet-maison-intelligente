@@ -53,7 +53,6 @@ function updateUserLevel($userId, $db) {
 
 function logActivity($userId, $typeAction, $description, $db, $objetId = null) {
     try {
-        // La requête SQL est modifiée pour inclure objet_id
         $sql = "INSERT INTO logs_activite (utilisateur_id, type_action, description_action, objet_id) 
                 VALUES (:uid, :type, :desc, :oid)";
         $stmt = $db->prepare($sql);
@@ -61,7 +60,7 @@ function logActivity($userId, $typeAction, $description, $db, $objetId = null) {
             ':uid' => $userId,
             ':type' => $typeAction,
             ':desc' => $description,
-            ':oid' => $objetId // On lie le nouvel ID
+            ':oid' => $objetId 
         ]);
     } catch (PDOException $e) {
         error_log("Erreur de journalisation: " . $e->getMessage());

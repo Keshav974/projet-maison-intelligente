@@ -27,21 +27,44 @@ try {
 } catch (PDOException $e) {
     $error_message = "Erreur lors de la récupération du profil.";
 }
-// Récupérer l'historique d'activité pour l'utilisateur affiché
-$logs_activite = [];
-try {
-    $id_a_chercher = $profil_id ?? $_SESSION['user_id'];
 
-    $stmt_logs = $db->prepare("SELECT type_action, description_action, to_char(date_action, 'DD/MM/YYYY à HH24:MI') AS date_formatee, nombre_connexions, nombre_actions
-                               FROM logs_activite 
-                               WHERE utilisateur_id = :id 
-                               ORDER BY date_action DESC 
-                               LIMIT 10");
-    $stmt_logs->execute([':id' => $id_a_chercher]);
-    $logs_activite = $stmt_logs->fetchAll();
+// Vérifier si l'utilisateur connecté est un admin
+$is_admin = false;
+try {
+    $sql_role = "SELECT role FROM utilisateurs WHERE id = :id";
+    $stmt_role = $db->prepare($sql_role);
+    $stmt_role->execute([':id' => $_SESSION['user_id']]);
+    $user_role = $stmt_role->fetchColumn();
+    $is_admin = ($user_role === 'admin');
 } catch (PDOException $e) {
-    // Gérer l'erreur si nécessaire
+    $is_admin = false;
 }
+
+// Récupérer l'historique d'activité pour l'utilisateur affiché (uniquement si admin)
+$logs_activite = [];
+if ($is_admin) {
+    try {
+        $stmt_logs = $db->prepare("
+            SELECT 
+                type_action, 
+                description_action, 
+                to_char(date_action, 'DD/MM/YYYY à HH24:MI') AS date_formatee 
+            FROM 
+                logs_activite 
+            WHERE 
+                utilisateur_id = :id 
+            ORDER BY 
+                date_action DESC 
+            LIMIT 10
+        ");
+
+        $stmt_logs->execute([':id' => $profil_id]);
+        $logs_activite = $stmt_logs->fetchAll();
+    } catch (PDOException $e) {
+        $logs_activite = [];
+    }
+}
+
 require_once 'includes/header.php';
 ?>
 
@@ -66,34 +89,37 @@ require_once 'includes/header.php';
                     
                     <dt class="col-sm-3">Membre depuis le :</dt>
                     <dd class="col-sm-9"><?php echo htmlspecialchars($profil_utilisateur['date_inscription_formatee']); ?></dd>
-                    <dt class="col-sm-4">Nombre de connexions :</dt>
-<dd class="col-sm-8"><?php echo htmlspecialchars($utilisateur_actuel['nombre_connexions']); ?></dd>
-
-<dt class="col-sm-4">Nombre d'actions :</dt>
-<dd class="col-sm-8"><?php echo htmlspecialchars($utilisateur_actuel['nombre_actions']); ?></dd>
                 </dl>
             </div>
         </div>
-        <div class="card mt-4">
-            <div class="card-header">
-                Historique des dernières activités
+
+        <!-- Bloc d'historique des activités (uniquement pour les admins) -->
+        <?php if ($is_admin) : ?>
+            <div class="card mt-4">
+                <div class="card-header">
+                    Historique des dernières activités
+                </div>
+                <div class="list-group list-group-flush">
+                    <?php if (!empty($logs_activite)) : ?>
+                        <?php foreach ($logs_activite as $log) : ?>
+                            <div class="list-group-item">
+                                <p class="mb-1">
+                                    <strong><?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $log['type_action']))); ?></strong>
+                                </p>
+                                <small class="text-muted"><?php echo htmlspecialchars($log['date_formatee']); ?></small>
+                                <?php if (!empty($log['description_action'])) : ?>
+                                    <p class="mb-0 small fst-italic">
+                                        Détail : <?php echo htmlspecialchars($log['description_action']); ?>
+                                    </p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else : ?>
+                        <div class="list-group-item">Aucune activité enregistrée.</div>
+                    <?php endif; ?>
+                </div>
             </div>
-            <div class="list-group list-group-flush">
-                <?php if (!empty($logs_activite)) : ?>
-                    <?php foreach ($logs_activite as $log) : ?>
-                        <div class="list-group-item">
-                            <p class="mb-1"><strong><?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $log['type_action']))); ?></strong></p>
-                            <small class="text-muted"><?php echo htmlspecialchars($log['date_formatee']); ?></small>
-                            <?php if (!empty($log['description_action'])): ?>
-                                <p class="mb-0 small fst-italic">Détail : <?php echo htmlspecialchars($log['description_action']); ?></p>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="list-group-item">Aucune activité enregistrée.</div>
-                <?php endif; ?>
-            </div>
-        </div>
+        <?php endif; ?>
     <?php elseif (isset($error_message)) : ?>
         <div class="alert alert-danger"><?php echo htmlspecialchars($error_message); ?></div>
     <?php else : ?>

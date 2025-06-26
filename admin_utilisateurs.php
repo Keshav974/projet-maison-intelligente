@@ -2,7 +2,7 @@
 session_start();
 require_once 'includes/config_db.php';
 
-// Protection : Admin seulement
+// Vérification des droits d'accès pour l'administrateur
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     die("Accès non autorisé.");
 }
@@ -10,10 +10,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 $errors = [];
 $success_message = '';
 
-// --- LOGIQUE DE SUPPRESSION (POST) ---
+// Gestion des actions POST (suppression ou ajout)
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    
-    // CAS 1 : Supprimer un membre de la liste d'autorisation
     if (isset($_POST['email_a_supprimer'])) {
         try {
             $stmt = $db->prepare("DELETE FROM membres_autorises WHERE email = :email");
@@ -24,18 +22,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // CAS 2 : Supprimer un utilisateur inscrit
     if (isset($_POST['id_utilisateur_a_supprimer'])) {
         $id_a_supprimer = $_POST['id_utilisateur_a_supprimer'];
-
-        // Sécurité : un admin ne peut pas se supprimer lui-même
         if ($id_a_supprimer == $_SESSION['user_id']) {
             $errors[] = "Vous ne pouvez pas supprimer votre propre compte administrateur.";
         } else {
             try {
-                // Pour un projet plus complexe, il faudrait aussi supprimer les données liées (objets, paramètres)
-                // ou utiliser des clés étrangères avec ON DELETE CASCADE.
-                // Ici, nous nous contentons de supprimer l'utilisateur.
                 $stmt = $db->prepare("DELETE FROM utilisateurs WHERE id = :id");
                 $stmt->execute([':id' => $id_a_supprimer]);
                 $success_message = "L'utilisateur a été supprimé avec succès.";
@@ -44,35 +36,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
     }
-}
-// --- Logique POST : Traitement de l'ajout d'un nouvel email à autoriser ---
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email_a_autoriser'])) {
-    $email = trim($_POST['email_a_autoriser']);
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = "Le format de l'email est invalide.";
-    } else {
-        try {
-            // On vérifie que l'email n'est pas déjà dans la liste
-            $stmt_check = $db->prepare("SELECT id FROM membres_autorises WHERE email = :email");
-            $stmt_check->execute([':email' => $email]);
-            if ($stmt_check->fetch()) {
-                $errors[] = "Cet email est déjà dans la liste des membres autorisés.";
-            } else {
-                // On insère le nouvel email avec le statut 'en_attente'
-                $stmt_insert = $db->prepare("INSERT INTO membres_autorises (email, statut) VALUES (:email, 'en_attente')");
-                $stmt_insert->execute([':email' => $email]);
-                $success_message = "L'email " . htmlspecialchars($email) . " a été autorisé à s'inscrire.";
+
+    if (isset($_POST['email_a_autoriser'])) {
+        $email = trim($_POST['email_a_autoriser']);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "Le format de l'email est invalide.";
+        } else {
+            try {
+                $stmt_check = $db->prepare("SELECT id FROM membres_autorises WHERE email = :email");
+                $stmt_check->execute([':email' => $email]);
+                if ($stmt_check->fetch()) {
+                    $errors[] = "Cet email est déjà dans la liste des membres autorisés.";
+                } else {
+                    $stmt_insert = $db->prepare("INSERT INTO membres_autorises (email, statut) VALUES (:email, 'en_attente')");
+                    $stmt_insert->execute([':email' => $email]);
+                    $success_message = "L'email " . htmlspecialchars($email) . " a été autorisé à s'inscrire.";
+                }
+            } catch (PDOException $e) {
+                $errors[] = "Erreur lors de l'ajout de l'email.";
             }
-        } catch (PDOException $e) {
-            $errors[] = "Erreur lors de l'ajout de l'email.";
         }
     }
 }
-// --- Logique GET pour l'affichage des listes (inchangée) ---
+
+// Récupération des données pour affichage
 try {
     $utilisateurs = $db->query("SELECT id, pseudo, email, role FROM utilisateurs ORDER BY id ASC")->fetchAll();
     $membres_autorises = $db->query("SELECT email, statut FROM membres_autorises ORDER BY email ASC")->fetchAll();
-} catch (PDOException $e) { /* ... gestion erreur ... */ }
+} catch (PDOException $e) { /* Gestion des erreurs */ }
 
 require_once 'includes/header.php';
 ?>
@@ -83,7 +74,7 @@ require_once 'includes/header.php';
 
     <?php
     if (!empty($success_message)) { echo '<div class="alert alert-success">' . htmlspecialchars($success_message) . '</div>'; }
-    if (!empty($errors)) { /* ... affichage des erreurs ... */ }
+    if (!empty($errors)) { /* Affichage des erreurs */ }
     ?>
 
     <div class="row g-5">
@@ -160,10 +151,7 @@ require_once 'includes/header.php';
                                 <td>
                                     <a href="voir_profil.php?id=<?php echo $utilisateur['id']; ?>" class="btn btn-info btn-sm">Voir</a>
                                     <a href="admin_modifier_utilisateur.php?id=<?php echo $utilisateur['id']; ?>" class="btn btn-warning btn-sm me-1">Modifier</a>
-                                    <?php
-                                    // On n'affiche le bouton Supprimer que si ce n'est pas l'admin lui-même
-                                    if ($utilisateur['id'] != $_SESSION['user_id']) :
-                                    ?>
+                                    <?php if ($utilisateur['id'] != $_SESSION['user_id']) : ?>
                                         <form action="admin_utilisateurs.php" method="post" class="d-inline" onsubmit="return confirm('ATTENTION : Supprimer cet utilisateur est définitif. Êtes-vous sûr ?');">
                                             <input type="hidden" name="id_utilisateur_a_supprimer" value="<?php echo $utilisateur['id']; ?>">
                                             <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>

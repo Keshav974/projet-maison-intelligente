@@ -2,16 +2,13 @@
 session_start();
 require_once 'includes/config_db.php';
 
-// Protection : seul un utilisateur connecté peut voir la liste des membres.
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
 
-// Récupération de tous les utilisateurs pour les afficher.
 $liste_membres = [];
 try {
-    // On ne sélectionne que les informations publiques.
     $sql = "SELECT id, pseudo, role, niveau FROM utilisateurs ORDER BY pseudo ASC";
     $stmt = $db->query($sql);
     $liste_membres = $stmt->fetchAll();
