@@ -31,6 +31,15 @@ try {
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Mise à jour de l'état de l'objet
         $nouvel_etat = $_POST['etat'] ?? $objet['etat'];
+            if ($nouvel_etat !== $objet['etat']) {
+        logActivity(
+            $_SESSION['user_id'], 
+            'etat_change', // Un nouveau type d'action clair
+            $nouvel_etat,   // La description est simplement le nouvel état ('Actif' ou 'Inactif')
+            $db, 
+            $objet_id
+        );
+    }
         $stmt_update_etat = $db->prepare("UPDATE objets_connectes SET etat = :etat WHERE id = :id");
         $stmt_update_etat->execute([':etat' => $nouvel_etat, ':id' => $objet_id]);
 
@@ -52,7 +61,7 @@ try {
         $points_ajoutes = 5;
         $stmt_update_points = $db->prepare("UPDATE utilisateurs SET points = points + :points WHERE id = :user_id");
         $stmt_update_points->execute([':points' => $points_ajoutes, ':user_id' => $_SESSION['user_id']]);
-        logActivity($_SESSION['user_id'], 'ajout_objet', "Ajout de l'objet : " . htmlspecialchars($nom_personnalise), $db);
+logActivity($_SESSION['user_id'], 'modification_objet', "Mise à jour de l'objet '" . htmlspecialchars($objet['nom']) . "'", $db, $objet_id);
         incrementerCompteurAction($_SESSION['user_id'], $db); //
         //updateUserLevel($_SESSION['user_id'], $db); // Mise à jour du niveau de l'utilisateur
         header("Location: modifier_objet.php?id=" . $objet_id . "&status=updated");
