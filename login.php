@@ -31,7 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if ($utilisateur && password_verify($mot_de_passe_login, $utilisateur['mot_de_passe_hash'])) {
                 if ($utilisateur['compte_valide'] || $utilisateur['jeton_validation'] === NULL) {
-                    $sql_update_points = "UPDATE utilisateurs SET points = points + 1 WHERE id = :user_id";
+                    $sql_update_points = "UPDATE utilisateurs SET points = points + 5 WHERE id = :user_id";
                     $stmt_update_points = $db->prepare($sql_update_points);
                     $stmt_update_points->bindParam(':user_id', $utilisateur['id'], PDO::PARAM_INT);
                     require_once 'includes/functions.php';
